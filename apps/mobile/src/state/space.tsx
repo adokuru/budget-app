@@ -3,6 +3,7 @@ import type { Currency, RateTable } from "@budget/shared";
 import { ensureSeeded } from "@/db/seed";
 import type { Space } from "@/db/models";
 import { loadRates } from "@/lib/rates";
+import { runRecurring } from "@/lib/recurring-engine";
 
 type SpaceContextValue = {
   space: Space;
@@ -39,6 +40,10 @@ export function SpaceProvider({ children }: { children: ReactNode }) {
       setSpace(s);
       setDisplayCurrency(s.baseCurrency);
       setRates(r);
+
+      // Catch up any recurring items that came due while the app was closed.
+      // Idempotent, so a re-run never double-posts.
+      void runRecurring(s.id, s.baseCurrency, r);
     })();
     return () => {
       cancelled = true;

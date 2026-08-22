@@ -10,7 +10,9 @@ import { AnimatedMoney } from "@/components/animated-money";
 import { CategoryRow } from "@/components/category-row";
 import { Money } from "@/components/money";
 import { EmptyState } from "@/components/empty-state";
-import { monthStart } from "@/lib/period";
+import { monthStart, monthEnd } from "@/lib/period";
+import { projectedRemaining } from "@/lib/recurring-engine";
+import type { RecurringRule } from "@/db/models";
 import { color, space, radius, type, CONTINUOUS, shadow } from "@/theme/tokens";
 
 export default function HomeScreen() {
@@ -30,11 +32,28 @@ export default function HomeScreen() {
     [spaceId]
   );
 
+  const rules = useQuery<RecurringRule>(
+    () =>
+      database.get<RecurringRule>("recurring_rules")
+        .query(Q.where("space_id", spaceId), Q.where("active", true)),
+    [spaceId]
+  );
+
   // Reports read base_minor, the value frozen at entry time, so a naira move
   // never silently re-prices last month.
   const income = sumMinor(txns.filter((t) => t.kind === "income").map((t) => t.baseMinor));
   const spent = sumMinor(txns.filter((t) => t.kind === "expense").map((t) => t.baseMinor));
   const leftBase = income - spent;
+
+  // Projected is kept separate from Actual on purpose. An unconfirmed salary
+  // must never inflate what you think you have — Nigerian salaries slip, and a
+  // balance that quietly assumes payday is worse than no balance.
+  const projection = useMemo(
+    () => projectedRemaining(rules, Date.now(), monthEnd().getTime()),
+    [rules]
+  );
+  const projectedBase = leftBase + projection.incomeMinor - projection.expenseMinor;
+  const hasProjection = projectedBase !== leftBase;
 
   const toDisplay = (m: number) =>
     baseCurrency === displayCurrency ? m : convertMinor(m, baseCurrency, displayCurrency, rates);
@@ -76,6 +95,14 @@ export default function HomeScreen() {
           <View style={{ flexDirection: "row", gap: space.lg, marginTop: space.sm }}>
             <Stat label="In" minor={toDisplay(income)} currency={displayCurrency} tone={color.accent} />
             <Stat label="Out" minor={toDisplay(spent)} currency={displayCurrency} tone={color.muted} />
+            {hasProjection && (
+              <Stat
+                label="By month end"
+                minor={toDisplay(projectedBase)}
+                currency={displayCurrency}
+                tone={projectedBase < 0 ? color.danger : color.muted}
+              />
+            )}
           </View>
         </View>
 
