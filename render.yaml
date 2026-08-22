@@ -1,0 +1,25 @@
+databases:
+  - name: kobo-db
+    databaseName: kobo
+    user: kobo
+    region: frankfurt
+    plan: basic-256mb
+
+services:
+  - type: web
+    name: kobo-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    region: frankfurt        # no African region on Render; Frankfurt is closest to Lagos
+    plan: starter            # NOT free: free instances spin down, which kills the
+                             # daily recurring cron and cold-starts every first sync
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kobo-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
