@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Kobo",
+    "slug": "kobo-budget",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "kobo",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.davidadokuru.kobo",
+      "supportsTablet": false,
+      "icon": "./assets/expo.icon"
+    },
+    "plugins": [
+      "expo-router",
+      "./plugins/with-watermelondb",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FAFAF8",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
