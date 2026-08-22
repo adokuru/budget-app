@@ -6,7 +6,7 @@
     "mobile": "pnpm --filter @budget/mobile",
     "api": "pnpm --filter @budget/api",
     "build": "pnpm --filter @budget/shared build && pnpm --filter @budget/api build",
-    "test": "pnpm -r --no-bail test",
+    "test": "pnpm --filter @budget/shared build && pnpm -r --no-bail test",
     "typecheck": "pnpm -r exec tsc --noEmit"
   }
 }
