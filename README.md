@@ -12,7 +12,9 @@ This project is under active development. I am building it in public, including 
 
 ## Why I am building it
 
-Many budget apps assume one person, one stable currency, and a salary that arrives exactly when expected. Those assumptions do not hold for everyone.
+Many budget apps assume one person, one stable currency, and a salary that arrives exactly when expected. Those assumptions do not hold for everyone. and it is hard to find an app that works well for households in Nigeria. Kobo Tracker is designed to handle: all the ways money moves in a household, multiple currencies, and the uncertainty of income and exchange rates.
+
+Also it's just fun to build a local-first app with a Expo
 
 Kobo Tracker makes different choices:
 
