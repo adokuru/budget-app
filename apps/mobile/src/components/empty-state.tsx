@@ -1,6 +1,13 @@
-import { Pressable, Text, View } from "react-native";
+import { Text } from "react-native";
 import { Link } from "expo-router";
-import { color, space, radius, type, CONTINUOUS } from "@/theme/tokens";
+import Animated, { Easing, FadeIn, FadeInDown } from "react-native-reanimated";
+import { PressableScale } from "@/components/pressable-scale";
+import { useReducedMotion } from "@/lib/motion";
+import { color, space, radius, type } from "@/theme/tokens";
+
+const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
+const EMPTY_ENTER = FadeInDown.duration(220).easing(EASE_OUT);
+const EMPTY_FADE = FadeIn.duration(150).easing(EASE_OUT);
 
 export function EmptyState({
   symbol, title, body, action,
@@ -11,8 +18,13 @@ export function EmptyState({
   body: string;
   action?: { label: string; href: string };
 }) {
+  const reduced = useReducedMotion();
+
   return (
-    <View style={{ alignItems: "center", paddingVertical: space.xxl, gap: space.sm }}>
+    <Animated.View
+      entering={reduced ? EMPTY_FADE : EMPTY_ENTER}
+      style={{ alignItems: "center", paddingVertical: space.xxl, gap: space.sm }}
+    >
       {symbol && <Text style={{ fontSize: 30, marginBottom: space.xs }}>{symbol}</Text>}
       <Text style={{ ...type.screenTitle, color: color.ink }}>{title}</Text>
       <Text style={{ ...type.meta, textAlign: "center", lineHeight: 18, maxWidth: 280 }}>
@@ -20,7 +32,7 @@ export function EmptyState({
       </Text>
       {action && (
         <Link href={action.href as never} asChild>
-          <Pressable
+          <PressableScale
             style={{
               marginTop: space.md, paddingVertical: 10, paddingHorizontal: space.lg,
               borderRadius: radius.pill, backgroundColor: color.accent,
@@ -29,9 +41,9 @@ export function EmptyState({
             <Text style={{ ...type.body, fontWeight: "700", color: color.onAccent }}>
               {action.label}
             </Text>
-          </Pressable>
+          </PressableScale>
         </Link>
       )}
-    </View>
+    </Animated.View>
   );
 }

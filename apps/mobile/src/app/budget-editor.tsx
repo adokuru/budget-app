@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
 import { applyKey, toMinor, type AmountKey } from "@budget/shared";
 import { database } from "@/db";
@@ -12,11 +13,13 @@ import { syncQuietly } from "@/lib/sync";
 import { Keypad } from "@/components/keypad";
 import { CategoryPicker } from "@/components/category-picker";
 import { Amt } from "@/components/amt";
+import { useToast } from "@/components/toast";
 import { monthStart } from "@/lib/period";
 import { color, space, type } from "@/theme/tokens";
 
 export default function BudgetEditorSheet() {
   const { spaceId, displayCurrency } = useSpace();
+  const { show } = useToast();
   const periodStart = useMemo(() => monthStart().getTime(), []);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [raw, setRaw] = useState("0");
@@ -66,6 +69,7 @@ export default function BudgetEditorSheet() {
     });
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    show("Monthly budget saved", { tone: "success" });
     // Push it up now; the family should not have to wait for a foreground.
     syncQuietly();
     router.back();

@@ -1,4 +1,4 @@
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { CURRENCIES } from "@budget/shared";
 import { useSpace } from "@/state/space";
 import { useAuth } from "@/state/auth";
@@ -6,6 +6,7 @@ import { usePrefs } from "@/state/prefs";
 import { AppHeader } from "@/components/app-header";
 import { Rule, Label, StatStrip } from "@/components/primitives";
 import { SettingsNavRow, SettingsToggleRow } from "@/components/settings-row";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { formatReminderTime } from "@/lib/reminders";
 import { color, space, GUTTER, type, DISPLAY_FONT } from "@/theme/tokens";
 

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import {
-  ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, Text, View,
+  ActivityIndicator, KeyboardAvoidingView, ScrollView, Text, View,
 } from "react-native";
 import { Link, router } from "expo-router";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Haptics from "expo-haptics";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { useAuth } from "@/state/auth";
 import { Field } from "@/components/field";
 import { Wordmark } from "@/components/logo";

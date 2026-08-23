@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { ScrollView, Switch, Text, View } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
 import {
   applyKey, toMinor, describeRecurrence, nextOccurrence, ordinal, utcDay,
@@ -15,6 +16,7 @@ import { syncQuietly } from "@/lib/sync";
 import { Keypad } from "@/components/keypad";
 import { CategoryPicker } from "@/components/category-picker";
 import { Amt } from "@/components/amt";
+import { useToast } from "@/components/toast";
 import { color, space, radius, type, CONTINUOUS } from "@/theme/tokens";
 
 const FREQS: { key: Freq; label: string }[] = [
@@ -26,6 +28,7 @@ const FREQS: { key: Freq; label: string }[] = [
 
 export default function RecurringRuleSheet() {
   const { spaceId, displayCurrency } = useSpace();
+  const { show } = useToast();
   const [kind, setKind] = useState<CategoryKind>("expense");
   const [freq, setFreq] = useState<Freq>("monthly");
   const [dayOfMonth, setDayOfMonth] = useState(25);
@@ -84,6 +87,7 @@ export default function RecurringRuleSheet() {
     });
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    show("Recurring item saved", { tone: "success" });
     // Push it up now; the family should not have to wait for a foreground.
     syncQuietly();
     router.back();

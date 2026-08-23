@@ -1,7 +1,8 @@
-import { Pressable, Switch, Text, View } from "react-native";
+import { Switch, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { color, space, GUTTER, type } from "@/theme/tokens";
 
 export function SettingsNavRow({

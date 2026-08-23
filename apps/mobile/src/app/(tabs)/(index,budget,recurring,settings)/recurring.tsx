@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
 import {
   sumMinor, convertMinor, describeRecurrence, formatWhole, FALLBACK_EMOJI,
@@ -15,12 +16,14 @@ import { Amt } from "@/components/amt";
 import { AppHeader } from "@/components/app-header";
 import { Rule, Label, EmojiPlain, Row } from "@/components/primitives";
 import { EmptyState } from "@/components/empty-state";
+import { useToast } from "@/components/toast";
 import { runRecurring, confirmPending, type PendingConfirmation } from "@/lib/recurring-engine";
 import { formatRelativeDay } from "@/lib/period";
 import { color, space, GUTTER, radius, type, CONTINUOUS } from "@/theme/tokens";
 
 export default function RecurringScreen() {
   const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
+  const { show } = useToast();
   const [pending, setPending] = useState<PendingConfirmation[]>([]);
 
   const rules = useQuery<RecurringRule>(
@@ -50,6 +53,9 @@ export default function RecurringScreen() {
     );
     await confirmPending(p, baseCurrency, rates, landed);
     await refresh();
+    show(landed ? "Marked as received" : "Left pending", {
+      tone: landed ? "success" : "info",
+    });
   }
 
   const outgoings = rules.filter((r) => r.kind === "expense");

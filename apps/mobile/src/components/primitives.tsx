@@ -1,5 +1,9 @@
 import { Text, View, type ViewStyle } from "react-native";
+import Animated, { cubicBezier } from "react-native-reanimated";
+import { useReducedMotion } from "@/lib/motion";
 import { color, space, GUTTER, radius, type, CONTINUOUS } from "@/theme/tokens";
+
+const EASE_IN_OUT = cubicBezier(0.77, 0, 0.175, 1);
 
 /**
  * A hairline rule inset from the gutter. The design uses these instead of
@@ -55,6 +59,7 @@ export function Thin({
   budget: number;
   tone: string;
 }) {
+  const reduced = useReducedMotion();
   const pct = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
   const fill = pct > 90 ? color.danger : pct > 72 ? color.warning : tone;
 
@@ -67,7 +72,21 @@ export function Thin({
         overflow: "hidden",
       }}
     >
-      <View style={{ width: `${pct}%`, height: "100%", borderRadius: radius.pill, backgroundColor: fill }} />
+      <Animated.View
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: radius.pill,
+          backgroundColor: fill,
+          transformOrigin: "left",
+          transform: [{ scaleX: pct / 100 }],
+          ...(!reduced && {
+            transitionProperty: "transform",
+            transitionDuration: "220ms",
+            transitionTimingFunction: EASE_IN_OUT,
+          }),
+        }}
+      />
     </View>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import {
   CURRENCIES, CURRENCY_CODES, PIVOT, rate as rateFor, type Currency,
 } from "@budget/shared";

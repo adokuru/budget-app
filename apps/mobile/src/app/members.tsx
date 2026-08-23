@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator, Alert, Pressable, ScrollView, Share, Text, View,
+  ActivityIndicator, Alert, ScrollView, Share, Text, View,
 } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { spacesApi, type Member } from "@/lib/api";
 import { sync } from "@/lib/sync";
 import { useSpace } from "@/state/space";

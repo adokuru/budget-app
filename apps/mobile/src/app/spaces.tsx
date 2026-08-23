@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator, Pressable, ScrollView, Text, TextInput, View,
+  ActivityIndicator, ScrollView, Text, TextInput, View,
 } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { CURRENCIES, CURRENCY_CODES, type Currency } from "@budget/shared";
 import { spacesApi, type SpaceSummary } from "@/lib/api";
 import { sync } from "@/lib/sync";

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { AppState } from "react-native";
 import { Stack } from "expo-router/stack";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
   useFonts,
   PlusJakartaSans_700Bold,
@@ -14,6 +15,8 @@ import { PrefsProvider } from "@/state/prefs";
 import { syncQuietly } from "@/lib/sync";
 import { color } from "@/theme/tokens";
 import { TrackingBridge } from "@/components/tracking-bridge";
+import { useReducedMotion } from "@/lib/motion";
+import { ToastProvider } from "@/components/toast";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,11 +35,15 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PrefsProvider>
-        <AuthProvider>
-          <Gate />
-        </AuthProvider>
-      </PrefsProvider>
+      <SafeAreaProvider>
+        <ToastProvider>
+          <PrefsProvider>
+            <AuthProvider>
+              <Gate />
+            </AuthProvider>
+          </PrefsProvider>
+        </ToastProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
@@ -44,6 +51,7 @@ export default function RootLayout() {
 function Gate() {
   const { user, ready } = useAuth();
   const signedIn = Boolean(user);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -69,7 +77,7 @@ function Gate() {
   */
   return (
     <Body signedIn={signedIn}>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false, animation: reduced ? "fade" : "default" }}>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>

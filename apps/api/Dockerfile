@@ -15,7 +15,7 @@ COPY packages/shared packages/shared
 COPY apps/api apps/api
 # shared must emit dist/ before the API's tsc build can resolve it
 RUN pnpm --filter @budget/shared build && pnpm --filter @budget/api build
-RUN pnpm prune --prod
+RUN CI=true pnpm prune --prod
 
 FROM base AS runtime
 ENV NODE_ENV=production

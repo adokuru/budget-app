@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
 import {
   applyKey, toMinor, snapshotRate, formatWhole, FALLBACK_EMOJI,
@@ -17,12 +18,14 @@ import { syncQuietly } from "@/lib/sync";
 import { Keypad } from "@/components/keypad";
 import { Amt } from "@/components/amt";
 import { Rule, EmojiPlain } from "@/components/primitives";
+import { useToast } from "@/components/toast";
 import {
   color, space, GUTTER, radius, type, CONTINUOUS, DISPLAY_FONT, CATEGORY_COLORS,
 } from "@/theme/tokens";
 
 export default function AddEntrySheet() {
   const { spaceId, baseCurrency, displayCurrency, rates } = useSpace();
+  const { show } = useToast();
   const [kind, setKind] = useState<CategoryKind>("expense");
   const [raw, setRaw] = useState("0");
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -69,6 +72,7 @@ export default function AddEntrySheet() {
     });
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    show(isExpense ? "Expense saved" : "Income saved", { tone: "success" });
     // Push it up now; the family should not have to wait for a foreground.
     syncQuietly();
     router.back();

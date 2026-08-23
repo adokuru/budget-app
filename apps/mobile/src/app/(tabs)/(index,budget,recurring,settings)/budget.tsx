@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { Q } from "@nozbe/watermelondb";
 import { sumMinor, convertMinor, percentOf, formatWhole, FALLBACK_EMOJI } from "@budget/shared";
@@ -12,6 +12,7 @@ import { AppHeader } from "@/components/app-header";
 import { Rule, Label, Thin, EmojiPlain, Row } from "@/components/primitives";
 import { EmptyState } from "@/components/empty-state";
 import { Fab } from "@/components/fab";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { monthStart } from "@/lib/period";
 import { color, space, GUTTER, type, CATEGORY_COLORS } from "@/theme/tokens";
 

@@ -1,7 +1,8 @@
-import { Pressable, ScrollView, Text } from "react-native";
+import { ScrollView, Text } from "react-native";
 import * as Haptics from "expo-haptics";
 import { FALLBACK_EMOJI } from "@budget/shared";
 import type { Category } from "@/db/models";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { color, space, GUTTER, radius, type } from "@/theme/tokens";
 
 /**

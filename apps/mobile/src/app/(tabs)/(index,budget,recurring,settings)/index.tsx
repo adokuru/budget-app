@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { Q } from "@nozbe/watermelondb";
 import { router } from "expo-router";
 import { Image } from "expo-image";
@@ -16,9 +16,10 @@ import { AppHeader } from "@/components/app-header";
 import { Rule, Label, Thin, Emoji, EmojiPlain, Row, StatStrip } from "@/components/primitives";
 import { EmptyState } from "@/components/empty-state";
 import { Fab } from "@/components/fab";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { projectedRemaining } from "@/lib/recurring-engine";
 import { monthStart, monthEnd, formatRelativeDay } from "@/lib/period";
-import { color, space, GUTTER, radius, type, CATEGORY_COLORS } from "@/theme/tokens";
+import { color, space, GUTTER, type, CATEGORY_COLORS } from "@/theme/tokens";
 
 export default function HomeScreen() {
   const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
@@ -115,24 +116,8 @@ export default function HomeScreen() {
         </Text>
 
         {/* Budget health: green until it is not. */}
-        <View
-          style={{
-            marginTop: space.base,
-            height: 3,
-            borderRadius: radius.pill,
-            backgroundColor: color.hairline,
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              width: `${Math.min(pct ?? 0, 100)}%`,
-              height: "100%",
-              borderRadius: radius.pill,
-              backgroundColor:
-                (pct ?? 0) > 90 ? color.danger : (pct ?? 0) > 72 ? color.warning : color.accent,
-            }}
-          />
+        <View style={{ marginTop: space.base }}>
+          <Thin spent={spent} budget={ceiling} tone={color.accent} />
         </View>
       </View>
 

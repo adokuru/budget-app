@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Alert, Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Linking, Platform, ScrollView, Text, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Label, Rule } from "@/components/primitives";
 import { SettingsToggleRow } from "@/components/settings-row";
+import { PressableScale as Pressable } from "@/components/pressable-scale";
+import { useToast } from "@/components/toast";
 import {
   ensureReminderPermission,
   formatReminderTime,
@@ -14,6 +16,7 @@ import { color, CONTINUOUS, GUTTER, radius, space, type } from "@/theme/tokens";
 
 export default function RemindersScreen() {
   const prefs = usePrefs();
+  const { show } = useToast();
   const [permission, setPermission] = useState(false);
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
 
@@ -137,7 +140,10 @@ export default function RemindersScreen() {
       <Pressable
         onPress={() => void scheduleTestReminder().then((sent) => {
           setPermission(sent);
-          if (sent) Alert.alert("Test scheduled", "It should arrive in about five seconds.");
+          show(
+            sent ? "Test reminder scheduled for five seconds" : "Notifications are off",
+            { tone: sent ? "success" : "error" }
+          );
         })}
         style={({ pressed }) => ({ ...rowStyle, backgroundColor: pressed ? color.pressed : color.canvas })}
       >

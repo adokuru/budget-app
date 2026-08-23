@@ -101,13 +101,3 @@ export const type = {
 export const TABULAR: { fontVariant: TextStyle["fontVariant"] } = {
   fontVariant: ["tabular-nums"],
 };
-
-/**
- * Physics, not durations. Three configs for the whole app — if a new
- * animation needs a fourth, it probably needs one of these instead.
- */
-export const spring = {
-  snappy: { damping: 20, stiffness: 300 },  // buttons, chips, taps
-  smooth: { damping: 26, stiffness: 180 },  // sheets, transitions
-  gentle: { damping: 30, stiffness: 120 },  // numbers, bars
-} as const;
