@@ -1,11 +1,12 @@
 import { useEffect } from "react";
-import { TextInput, View, type TextStyle } from "react-native";
+import { Text, TextInput, View, type TextStyle } from "react-native";
 import Animated, {
   useAnimatedProps, useSharedValue, withSpring, useDerivedValue,
 } from "react-native-reanimated";
 import { CURRENCIES, type Currency } from "@budget/shared";
 import { MONEY_FONT, TABULAR, color, spring } from "@/theme/tokens";
 import { useReducedMotion } from "@/lib/motion";
+import { useSpace } from "@/state/space";
 
 Animated.addWhitelistedNativeProps({ text: true });
 const AnimatedInput = Animated.createAnimatedComponent(TextInput);
@@ -43,6 +44,7 @@ export function AnimatedMoney({
   size?: number;
   tone?: string;
 }) {
+  const { hideBalances, showMinorUnits } = useSpace();
   const decimals = CURRENCIES[currency].decimals;
   const factor = 10 ** decimals;
   const reduced = useReducedMotion();
@@ -72,6 +74,17 @@ export function AnimatedMoney({
   const base: TextStyle = { fontFamily: MONEY_FONT, color: tone, padding: 0, ...TABULAR };
   const common = { editable: false, underlineColorAndroid: "transparent" } as const;
 
+  if (hideBalances) {
+    return (
+      <Text
+        accessibilityLabel="Balance hidden"
+        style={[base, { fontSize: size, lineHeight: size * 1.06 }]}
+      >
+        ••••
+      </Text>
+    );
+  }
+
   return (
     <View
       style={{ flexDirection: "row", alignItems: "flex-start" }}
@@ -87,11 +100,13 @@ export function AnimatedMoney({
         animatedProps={integerProps}
         style={[base, { fontSize: size, lineHeight: size * 1.06 }]}
       />
-      <AnimatedInput
-        {...common}
-        animatedProps={fractionProps}
-        style={[base, { fontSize: size * 0.5, lineHeight: size * 0.62 }]}
-      />
+      {showMinorUnits && (
+        <AnimatedInput
+          {...common}
+          animatedProps={fractionProps}
+          style={[base, { fontSize: size * 0.5, lineHeight: size * 0.62 }]}
+        />
+      )}
     </View>
   );
 }

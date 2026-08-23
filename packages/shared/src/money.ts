@@ -8,6 +8,10 @@ export const CURRENCIES = {
   USD: { symbol: "$", name: "US Dollar", decimals: 2 },
   CAD: { symbol: "CA$", name: "Canadian Dollar", decimals: 2 },
   EUR: { symbol: "€", name: "Euro", decimals: 2 },
+  GBP: { symbol: "£", name: "British Pound", decimals: 2 },
+  GHS: { symbol: "GH₵", name: "Ghanaian Cedi", decimals: 2 },
+  KES: { symbol: "KSh", name: "Kenyan Shilling", decimals: 2 },
+  ZAR: { symbol: "R", name: "South African Rand", decimals: 2 },
 } as const;
 
 export type Currency = keyof typeof CURRENCIES;

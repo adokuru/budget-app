@@ -5,7 +5,7 @@ import {
 } from "@budget/shared";
 import { database } from "@/db";
 import type { RecurringRule, Transaction } from "@/db/models";
-import { LOCAL_USER_ID } from "@/db/seed";
+import { currentUserId } from "./session";
 
 export type PendingConfirmation = {
   rule: RecurringRule;
@@ -63,7 +63,7 @@ export async function runRecurring(
           return txns.prepareCreate((t) => {
             t.spaceId = rule.spaceId;
             t.categoryId = rule.categoryId;
-            t.createdBy = LOCAL_USER_ID;
+            t.createdBy = currentUserId();
             t.kind = rule.kind;
             t.amountMinor = rule.amountMinor;
             t.currency = rule.currency;
@@ -128,7 +128,7 @@ export async function confirmPending(
       await database.get<Transaction>("transactions").create((t) => {
         t.spaceId = rule.spaceId;
         t.categoryId = rule.categoryId;
-        t.createdBy = LOCAL_USER_ID;
+        t.createdBy = currentUserId();
         t.kind = rule.kind;
         t.amountMinor = rule.amountMinor;
         t.currency = rule.currency;

@@ -1,0 +1,28 @@
+{
+  "fill": {
+    "automatic-gradient": "extended-srgb:0.04706,0.07059,0.13333,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "glass": false,
+          "image-name": "kobo-mark.png",
+          "name": "Kobo Tracker mark"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.35
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.35
+      }
+    }
+  ],
+  "supported-platforms": {
+    "circles": ["watchOS"],
+    "squares": "shared"
+  }
+}

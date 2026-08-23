@@ -1,17 +1,23 @@
 {
   "expo": {
-    "name": "Kobo",
-    "slug": "kobo-budget",
+    "name": "Kobo Tracker",
+    "slug": "kobo-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/kobo-mark.png",
     "scheme": "kobo",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.davidadokuru.kobo",
       "supportsTablet": false,
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/kobo-tracker.icon"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/kobo-mark.png",
+        "backgroundColor": "#0C1222",
+        "monochromeImage": "./assets/images/kobo-mark.png"
+      }
     },
     "plugins": [
       "expo-router",
@@ -19,7 +25,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FAFAF8",
+          "backgroundColor": "#F4F6FB",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }

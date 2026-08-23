@@ -11,6 +11,7 @@ import { database } from "@/db";
 import type { Category, RecurringRule } from "@/db/models";
 import { useQuery } from "@/db/hooks";
 import { useSpace } from "@/state/space";
+import { syncQuietly } from "@/lib/sync";
 import { Keypad } from "@/components/keypad";
 import { CategoryPicker } from "@/components/category-picker";
 import { Money } from "@/components/money";
@@ -83,6 +84,8 @@ export default function RecurringRuleSheet() {
     });
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Push it up now; the family should not have to wait for a foreground.
+    syncQuietly();
     router.back();
   }
 

@@ -1,6 +1,7 @@
 import { Text, View, type TextStyle } from "react-native";
 import { formatParts, formatMoney, type Currency } from "@budget/shared";
 import { MONEY_FONT, TABULAR, color } from "@/theme/tokens";
+import { useSpace } from "@/state/space";
 
 type Size = "display" | "figure" | "row";
 
@@ -37,6 +38,7 @@ export function Money({
   signed = false,
   hideFraction = false,
 }: MoneyProps) {
+  const { hideBalances, showMinorUnits } = useSpace();
   const { sign, symbol, integer, fraction } = formatParts(minor, currency);
   const s = SIZES[size];
   const prefix = sign || (signed && minor > 0 ? "+" : "");
@@ -47,6 +49,17 @@ export function Money({
     color: fg,
     ...TABULAR,
   };
+
+  if (hideBalances) {
+    return (
+      <Text
+        accessibilityLabel="Balance hidden"
+        style={[base, { fontSize: s.font, lineHeight: s.font * 1.06 }]}
+      >
+        ••••
+      </Text>
+    );
+  }
 
   return (
     <View
@@ -60,7 +73,7 @@ export function Money({
       <Text style={[base, { fontSize: s.font, lineHeight: s.font * 1.06 }]}>
         {integer}
       </Text>
-      {!hideFraction && (
+      {!hideFraction && showMinorUnits && (
         <Text style={[base, { fontSize: s.fraction, lineHeight: s.font * 0.62 }]}>
           {fraction}
         </Text>

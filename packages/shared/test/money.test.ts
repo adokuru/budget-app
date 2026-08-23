@@ -77,6 +77,7 @@ test("percentOf clamps and returns null when there is no limit", () => {
 
 test("currency guard", () => {
   assert.ok(isCurrency("NGN"));
-  assert.ok(!isCurrency("GBP"));
-  assert.deepEqual(CURRENCY_CODES, ["NGN", "USD", "CAD", "EUR"]);
+  assert.ok(isCurrency("GBP"));
+  assert.ok(!isCurrency("BTC"));
+  assert.deepEqual(CURRENCY_CODES, ["NGN", "USD", "CAD", "EUR", "GBP", "GHS", "KES", "ZAR"]);
 });

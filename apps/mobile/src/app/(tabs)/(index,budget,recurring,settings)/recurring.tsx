@@ -68,7 +68,7 @@ export default function RecurringScreen() {
               padding: space.lg, gap: space.md,
             }}
           >
-            <Text style={{ ...type.micro, color: color.muted }}>
+            <Text style={{ ...type.micro, color: color.onInkMuted }}>
               {formatRelativeDay(new Date(p.occurredAt))} · expected
             </Text>
             <Text style={{ ...type.heading, color: color.onInk }}>{p.rule.label}</Text>
@@ -76,7 +76,7 @@ export default function RecurringScreen() {
               minor={toDisplay(p.rule.amountMinor, p.rule.currency)}
               currency={displayCurrency}
               size="figure"
-              tone={p.rule.kind === "income" ? color.accent : color.onInk}
+              tone={p.rule.kind === "income" ? color.highlight : color.onInk}
             />
             <View style={{ flexDirection: "row", gap: space.sm, marginTop: space.xs }}>
               <Pressable
@@ -185,7 +185,7 @@ function Section({
               currency={currency}
               size="row"
               hideFraction
-              tone={r.kind === "income" ? color.accent : color.ink}
+              tone={r.kind === "income" ? color.positive : color.ink}
             />
           </View>
         );

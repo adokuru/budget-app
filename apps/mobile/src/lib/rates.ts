@@ -77,7 +77,7 @@ export async function loadRates(force = false): Promise<RateTable> {
 
   return {
     // Seeded so the app is usable on a first launch with no network.
-    perPivot: chosen?.perPivot ?? FALLBACK,
+    perPivot: { ...FALLBACK, ...chosen?.perPivot },
     overrides,
     fetchedAt: chosen?.fetchedAt,
   };
@@ -88,5 +88,6 @@ export async function loadRates(force = false): Promise<RateTable> {
  * rather than absent, so a brand-new offline install still converts.
  */
 const FALLBACK: Partial<Record<Currency, number>> = {
-  NGN: 1540, CAD: 1.36, EUR: 0.92, USD: 1,
+  NGN: 1349.67, USD: 1, CAD: 1.3763, EUR: 0.856,
+  GBP: 0.7333, GHS: 10.5359, KES: 129.4215, ZAR: 16.0219,
 };

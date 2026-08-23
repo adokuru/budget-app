@@ -11,9 +11,10 @@ import { CategoryPicker } from "@/components/category-picker";
 import { Money } from "@/components/money";
 import { database } from "@/db";
 import type { Category, Transaction } from "@/db/models";
-import { LOCAL_USER_ID } from "@/db/seed";
+import { currentUserId } from "@/lib/session";
 import { useQuery } from "@/db/hooks";
 import { useSpace } from "@/state/space";
+import { syncQuietly } from "@/lib/sync";
 import { color, space, radius, type } from "@/theme/tokens";
 import { Q } from "@nozbe/watermelondb";
 
@@ -47,7 +48,7 @@ export default function AddExpenseSheet() {
       await database.get<Transaction>("transactions").create((t) => {
         t.spaceId = spaceId;
         t.categoryId = categoryId!;
-        t.createdBy = LOCAL_USER_ID;
+        t.createdBy = currentUserId();
         t.kind = kind;
         t.amountMinor = minor;
         t.currency = displayCurrency;
@@ -60,6 +61,8 @@ export default function AddExpenseSheet() {
     });
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Push it up now; the family should not have to wait for a foreground.
+    syncQuietly();
     router.back();
   }
 

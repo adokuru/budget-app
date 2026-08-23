@@ -86,21 +86,21 @@ export default function HomeScreen() {
             gap: space.sm,
           }}
         >
-          <Text style={{ ...type.micro, color: color.muted }}>Left to spend</Text>
+          <Text style={{ ...type.micro, color: color.onInkMuted }}>Left to spend</Text>
           <AnimatedMoney
             minor={toDisplay(leftBase)}
             currency={displayCurrency}
             tone={leftBase < 0 ? color.danger : color.onInk}
           />
           <View style={{ flexDirection: "row", gap: space.lg, marginTop: space.sm }}>
-            <Stat label="In" minor={toDisplay(income)} currency={displayCurrency} tone={color.accent} />
-            <Stat label="Out" minor={toDisplay(spent)} currency={displayCurrency} tone={color.muted} />
+            <Stat label="In" minor={toDisplay(income)} currency={displayCurrency} tone={color.highlight} />
+            <Stat label="Out" minor={toDisplay(spent)} currency={displayCurrency} tone={color.onInkMuted} />
             {hasProjection && (
               <Stat
                 label="By month end"
                 minor={toDisplay(projectedBase)}
                 currency={displayCurrency}
-                tone={projectedBase < 0 ? color.danger : color.muted}
+                tone={projectedBase < 0 ? color.danger : color.onInkMuted}
               />
             )}
           </View>
@@ -139,7 +139,7 @@ function Stat({
 }: { label: string; minor: number; currency: Parameters<typeof Money>[0]["currency"]; tone: string }) {
   return (
     <View style={{ gap: 2 }}>
-      <Text style={{ ...type.micro, color: color.muted }}>{label}</Text>
+      <Text style={{ ...type.micro, color: color.onInkMuted }}>{label}</Text>
       <Money minor={minor} currency={currency} size="row" tone={tone} hideFraction />
     </View>
   );

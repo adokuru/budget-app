@@ -4,20 +4,25 @@ import { CATEGORY_COLORS } from "@budget/shared";
 /**
  * The single source of truth for the visual system.
  *
- * Light-first. Every value is semantic, so dark mode later is a second
- * values object here — not a refactor of every screen.
+ * Kobo Tracker's light finance canvas: cool paper, ink panels, cobalt actions,
+ * and one lime signal color. Every value is semantic.
  */
 
 export const color = {
-  canvas: "#FAFAF8",   // warm off-white, never pure white
+  canvas: "#F4F6FB",
   card: "#FFFFFF",
-  ink: "#111114",      // hero card background AND primary text
+  ink: "#0C1222",
   onInk: "#FFFFFF",
-  muted: "#6B6B76",
-  hairline: "#0000001A",
-  accent: "#00A860",   // Nigerian green
+  onInkMuted: "#AEB9D0",
+  muted: "#697386",
+  hairline: "#DCE2EF",
+  stroke: "#E6EAF2",
+  accent: "#3157FF",
   onAccent: "#FFFFFF",
-  danger: "#E5484D",
+  highlight: "#C8F135",
+  onHighlight: "#0C1222",
+  positive: "#148A5B",
+  danger: "#D63C4A",
   category: CATEGORY_COLORS,
 } as const;
 
@@ -40,8 +45,9 @@ export const CONTINUOUS = { borderCurve: "continuous" } as const;
 
 /** The only elevation in the app — hero card and FAB, nothing else. */
 export const shadow = {
-  lifted: { boxShadow: "0 8px 24px rgba(17, 17, 20, 0.10)" },
-  fab: { boxShadow: "0 6px 20px rgba(0, 168, 96, 0.35)" },
+  card: { boxShadow: "0 8px 24px rgba(12, 18, 34, 0.05)" },
+  lifted: { boxShadow: "0 18px 40px rgba(12, 18, 34, 0.18)" },
+  fab: { boxShadow: "0 8px 24px rgba(49, 87, 255, 0.32)" },
 } as const;
 
 /**
