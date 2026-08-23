@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Q } from "@nozbe/watermelondb";
@@ -72,7 +72,11 @@ export default function BudgetEditorSheet() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.canvas }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: color.canvas }}
+      contentContainerStyle={{ flexGrow: 1 }}
+      showsVerticalScrollIndicator={false}
+    >
       <View
         style={{
           flexDirection: "row", alignItems: "center", justifyContent: "space-between",
@@ -111,6 +115,6 @@ export default function BudgetEditorSheet() {
       <View style={{ paddingHorizontal: space.lg, paddingBottom: space.lg }}>
         <Keypad onKey={(k: AmountKey) => setRaw((r) => applyKey(r, k))} />
       </View>
-    </View>
+    </ScrollView>
   );
 }

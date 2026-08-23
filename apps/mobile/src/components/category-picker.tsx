@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text } from "react-native";
 import * as Haptics from "expo-haptics";
 import { FALLBACK_EMOJI } from "@budget/shared";
 import type { Category } from "@/db/models";
@@ -15,43 +15,42 @@ export function CategoryPicker({
   onSelect: (id: string) => void;
 }) {
   return (
-    <View style={{ height: 34 }}>
-      <ScrollView
-        horizontal
-        contentInsetAdjustmentBehavior="never"
-        showsHorizontalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ gap: space.sm, paddingHorizontal: GUTTER }}
-      >
-        {categories.map((c) => {
-          const active = c.id === selectedId;
-          return (
-            <Pressable
-              key={c.id}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              onPress={() => {
-                Haptics.selectionAsync();
-                onSelect(c.id);
-              }}
-              style={{
-                flexDirection: "row", alignItems: "center", gap: 6,
-                height: 34, paddingHorizontal: space.md,
-                borderRadius: radius.pill,
-                backgroundColor: active ? color.ink : color.chip,
-              }}
+    <ScrollView
+      horizontal
+      style={{ height: 34, flexGrow: 0 }}
+      contentInsetAdjustmentBehavior="never"
+      showsHorizontalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ gap: space.sm, paddingHorizontal: GUTTER }}
+    >
+      {categories.map((c) => {
+        const active = c.id === selectedId;
+        return (
+          <Pressable
+            key={c.id}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            onPress={() => {
+              Haptics.selectionAsync();
+              onSelect(c.id);
+            }}
+            style={{
+              flexDirection: "row", alignItems: "center", gap: 6,
+              height: 34, paddingHorizontal: space.md,
+              borderRadius: radius.pill,
+              backgroundColor: active ? color.ink : color.chip,
+            }}
+          >
+            <Text style={{ fontSize: 14 }}>{c.emoji || FALLBACK_EMOJI}</Text>
+            <Text
+              style={{ ...type.rowTitle, color: active ? color.onAccent : color.body }}
+              numberOfLines={1}
             >
-              <Text style={{ fontSize: 14 }}>{c.emoji || FALLBACK_EMOJI}</Text>
-              <Text
-                style={{ ...type.rowTitle, color: active ? color.onAccent : color.body }}
-                numberOfLines={1}
-              >
-                {c.name}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </View>
+              {c.name}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 }

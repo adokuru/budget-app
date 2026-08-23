@@ -75,13 +75,24 @@ function Gate() {
 
         <Stack.Protected guard={signedIn}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="currency"
+            options={{
+              headerShown: true,
+              title: "Currency",
+              headerShadowVisible: false,
+              headerBackButtonDisplayMode: "minimal",
+              headerTintColor: color.ink,
+              headerStyle: { backgroundColor: color.canvas },
+            }}
+          />
           {/*
             Sheets are routes, not components: native presentation, native
             detents, native dismiss gesture. No sheet library in the app.
           */}
           <Stack.Screen name="add-expense" options={{ ...SHEET, sheetAllowedDetents: [0.66, 0.95], sheetInitialDetentIndex: "last" }} />
           <Stack.Screen name="converter" options={{ ...SHEET, sheetAllowedDetents: [0.58] }} />
-          <Stack.Screen name="budget-editor" options={{ ...SHEET, sheetAllowedDetents: [0.62], sheetExpandsWhenScrolledToEdge: false }} />
+          <Stack.Screen name="budget-editor" options={{ ...SHEET, sheetAllowedDetents: [0.62] }} />
           <Stack.Screen name="recurring-rule" options={{ ...SHEET, sheetAllowedDetents: [0.8, 0.95] }} />
           <Stack.Screen name="spaces" options={{ ...SHEET, sheetAllowedDetents: [0.6] }} />
           <Stack.Screen name="members" options={{ ...SHEET, sheetAllowedDetents: [0.7] }} />
