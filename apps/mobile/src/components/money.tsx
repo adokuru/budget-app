@@ -3,12 +3,13 @@ import { formatParts, formatMoney, type Currency } from "@budget/shared";
 import { MONEY_FONT, TABULAR, color } from "@/theme/tokens";
 import { useSpace } from "@/state/space";
 
-type Size = "display" | "figure" | "row";
+type Size = "display" | "figure" | "row" | "tiny";
 
 const SIZES: Record<Size, { font: number; symbol: number; fraction: number }> = {
   display: { font: 40, symbol: 24, fraction: 20 },
   figure: { font: 24, symbol: 15, fraction: 13 },
   row: { font: 16, symbol: 11, fraction: 9 },
+  tiny: { font: 12, symbol: 9, fraction: 8 },
 };
 
 export type MoneyProps = {

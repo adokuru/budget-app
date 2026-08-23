@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/state/auth";
 import { Field } from "@/components/field";
+import { Logo } from "@/components/logo";
 import { color, space, radius, type, MONEY_FONT } from "@/theme/tokens";
 
 export default function SignUpScreen() {
@@ -42,7 +43,8 @@ export default function SignUpScreen() {
         contentContainerStyle={{ padding: space.lg, gap: space.base, paddingTop: space.huge }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontFamily: MONEY_FONT, fontSize: 32, color: color.ink }}>
+        <Logo size={56} />
+        <Text style={{ fontFamily: MONEY_FONT, fontSize: 30, color: color.ink, marginTop: space.sm }}>
           Create account
         </Text>
         <Text style={{ ...type.body, color: color.muted, marginBottom: space.sm }}>

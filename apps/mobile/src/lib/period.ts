@@ -28,3 +28,8 @@ export function formatRelativeDay(d: Date): string {
 
   return isYesterday ? "Yesterday" : formatDay(d);
 }
+
+/** Start of the previous month, for month-over-month comparison. */
+export function prevMonthStart(d: Date = new Date()): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1));
+}

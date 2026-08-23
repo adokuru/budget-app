@@ -13,7 +13,7 @@ import { Money } from "@/components/money";
 import { EmptyState } from "@/components/empty-state";
 import { runRecurring, confirmPending, type PendingConfirmation } from "@/lib/recurring-engine";
 import { formatRelativeDay } from "@/lib/period";
-import { color, space, radius, type, CONTINUOUS, tint } from "@/theme/tokens";
+import { color, onColor, space, radius, type, CONTINUOUS, tint } from "@/theme/tokens";
 
 export default function RecurringScreen() {
   const { spaceId, baseCurrency, displayCurrency, rates } = useSpace();
@@ -68,7 +68,7 @@ export default function RecurringScreen() {
               padding: space.lg, gap: space.md,
             }}
           >
-            <Text style={{ ...type.micro, color: color.onInkMuted }}>
+            <Text style={{ ...type.micro, color: onColor.subtext }}>
               {formatRelativeDay(new Date(p.occurredAt))} · expected
             </Text>
             <Text style={{ ...type.heading, color: color.onInk }}>{p.rule.label}</Text>
@@ -76,7 +76,7 @@ export default function RecurringScreen() {
               minor={toDisplay(p.rule.amountMinor, p.rule.currency)}
               currency={displayCurrency}
               size="figure"
-              tone={p.rule.kind === "income" ? color.highlight : color.onInk}
+              tone={p.rule.kind === "income" ? color.accent : color.onInk}
             />
             <View style={{ flexDirection: "row", gap: space.sm, marginTop: space.xs }}>
               <Pressable
@@ -185,7 +185,7 @@ function Section({
               currency={currency}
               size="row"
               hideFraction
-              tone={r.kind === "income" ? color.positive : color.ink}
+              tone={r.kind === "income" ? color.accent : color.ink}
             />
           </View>
         );

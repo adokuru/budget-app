@@ -1,6 +1,6 @@
 import { Inject, Injectable, ConflictException } from "@nestjs/common";
 import { and, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
-import { SYNC_TABLE_NAMES, type SyncTableName } from "@budget/shared";
+import { SYNC_SCHEMA, SYNC_TABLE_NAMES, type SyncTableName } from "@budget/shared";
 import { DB, type Db } from "../db/db.module";
 import {
   users, spaces, memberships, categories, transactions, recurringRules, budgets,
@@ -85,7 +85,7 @@ export class SyncService {
         if (!isFirstPull) out.deleted.push(row.id);
         continue;
       }
-      const clean = sanitize(row);
+      const clean = sanitize(table, row);
       if (isFirstPull || new Date(row.created_at) > since) out.created.push(clean);
       else out.updated.push(clean);
     }
@@ -236,12 +236,56 @@ export class SyncService {
   }
 }
 
-function sanitize(row: Row): Row {
+/**
+ * Coerce every column to the type the shared manifest declares.
+ *
+ * This is not cosmetic. Postgres hands back timestamptz as a string on the raw
+ * query path, and WatermelonDB stores date columns as epoch millis — so a
+ * passed-through string lands in SQLite and every `where(occurred_at, gte(n))`
+ * silently matches nothing. Coercing against the manifest fixes the whole
+ * class of mismatch rather than one column at a time.
+ */
+function sanitize(table: SyncTableName, row: Row): Row {
+  const columns = SYNC_SCHEMA[table] as Record<string, { type: string } | undefined>;
   const out: Row = {};
+
   for (const [k, v] of Object.entries(row)) {
     if (NEVER_SEND.has(k)) continue;
-    // WatermelonDB stores dates as epoch millis, not ISO strings.
-    out[k] = v instanceof Date ? v.getTime() : v;
+
+    const declared = columns[k]?.type;
+    if (declared === undefined) {
+      out[k] = v instanceof Date ? v.getTime() : v;
+      continue;
+    }
+
+    if (v === null || v === undefined) {
+      out[k] = null;
+      continue;
+    }
+
+    switch (declared) {
+      case "number":
+        out[k] = toNumber(v);
+        break;
+      case "boolean":
+        out[k] = v === true || v === "t" || v === "true" || v === 1;
+        break;
+      default:
+        out[k] = String(v);
+    }
   }
   return out;
+}
+
+function toNumber(v: unknown): number | null {
+  if (v instanceof Date) return v.getTime();
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+    // Postgres timestamptz on the raw query path, e.g. "2026-08-22 11:00:00+01".
+    const parsed = Date.parse(v);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
 }

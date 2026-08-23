@@ -7,6 +7,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/state/auth";
 import { Field } from "@/components/field";
+import { Logo } from "@/components/logo";
 import { color, space, radius, type, MONEY_FONT } from "@/theme/tokens";
 
 export default function SignInScreen() {
@@ -62,7 +63,10 @@ export default function SignInScreen() {
         contentContainerStyle={{ padding: space.lg, gap: space.base, paddingTop: space.huge }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontFamily: MONEY_FONT, fontSize: 40, color: color.ink }}>Kobo Tracker</Text>
+        <Logo size={68} />
+        <Text style={{ fontFamily: MONEY_FONT, fontSize: 38, color: color.ink, marginTop: space.sm }}>
+          Kobo Tracker
+        </Text>
         <Text style={{ ...type.body, color: color.muted, marginBottom: space.base }}>
           Every naira accounted for.
         </Text>

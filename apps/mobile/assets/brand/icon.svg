@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#0BAF5F"/>
+      <stop offset="55%"  stop-color="#00A860"/>
+      <stop offset="100%" stop-color="#04724A"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.20"/>
+      <stop offset="60%"  stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#sheen)"/>
+
+  <!-- Naira mark: two stems, an N diagonal, and the two crossbars that make it a naira. -->
+  <g fill="#FFFFFF" transform="translate(512 512) scale(0.84) translate(-512 -512)">
+    <rect x="286" y="286" width="86" height="452" rx="20"/>
+    <rect x="652" y="286" width="86" height="452" rx="20"/>
+    <path d="M358 286 L444 286 L738 738 L652 738 Z"/>
+    <rect x="228" y="452" width="568" height="66" rx="18"/>
+    <rect x="228" y="586" width="568" height="66" rx="18"/>
+  </g>
+</svg>

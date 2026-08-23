@@ -303,3 +303,44 @@ test("a non-owner cannot remove members", async () => {
 
   await assert.rejects(() => spaces.removeMember(b, family.id, a), /do not have permission/);
 });
+
+test("date columns reach the client as epoch millis, not strings", async () => {
+  const a = await newUser("A");
+  const family = await spaces.create(a, "Family", "NGN");
+  const catId = (await sync.pull(a, 0)).changes.categories!.created
+    .find((c) => c.space_id === family.id)!.id as string;
+
+  const occurred = new Date("2026-08-18T09:00:00Z");
+  await sync.push(a, {
+    transactions: {
+      created: [{
+        id: randomUUID(), space_id: family.id, category_id: catId, created_by: a,
+        kind: "expense", amount_minor: 18_400_000, currency: "NGN",
+        rate_to_base: 1, base_minor: 18_400_000, note: "Market",
+        occurred_at: occurred,
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0);
+
+  const txn = (await sync.pull(a, 0)).changes.transactions!.created[0]!;
+
+  // WatermelonDB stores dates as numbers. A string here lands in SQLite and
+  // every date comparison silently matches nothing.
+  assert.equal(typeof txn.occurred_at, "number", `got ${typeof txn.occurred_at}`);
+  assert.equal(txn.occurred_at, occurred.getTime());
+  assert.equal(typeof txn.created_at, "number");
+  assert.equal(typeof txn.amount_minor, "number");
+  assert.equal(typeof txn.currency, "string");
+});
+
+test("boolean columns survive Postgres round-tripping", async () => {
+  const a = await newUser("A");
+  const family = await spaces.create(a, "Family", "NGN");
+  const cat = (await sync.pull(a, 0)).changes.categories!.created
+    .find((c) => c.space_id === family.id)!;
+
+  assert.equal(typeof cat.archived, "boolean", `got ${typeof cat.archived}`);
+  assert.equal(cat.archived, false);
+  assert.equal(typeof cat.sort, "number");
+});

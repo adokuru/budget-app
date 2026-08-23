@@ -6,6 +6,7 @@ import { useFonts, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
 import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider, useAuth } from "@/state/auth";
 import { SpaceProvider } from "@/state/space";
+import { PrefsProvider } from "@/state/prefs";
 import { syncQuietly } from "@/lib/sync";
 import { color } from "@/theme/tokens";
 
@@ -26,9 +27,11 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <Gate />
-      </AuthProvider>
+      <PrefsProvider>
+        <AuthProvider>
+          <Gate />
+        </AuthProvider>
+      </PrefsProvider>
     </GestureHandlerRootView>
   );
 }
