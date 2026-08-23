@@ -15,12 +15,12 @@ COPY packages/shared packages/shared
 COPY apps/api apps/api
 # shared must emit dist/ before the API's tsc build can resolve it
 RUN pnpm --filter @budget/shared build && pnpm --filter @budget/api build
-RUN CI=true pnpm prune --prod
+RUN pnpm --filter @budget/api --prod deploy --legacy /prod/api
 
 FROM base AS runtime
 ENV NODE_ENV=production
-COPY --from=build /repo /repo
-WORKDIR /repo/apps/api
+COPY --from=build /prod/api /app
+WORKDIR /app
 EXPOSE 3000
 # Render sets PORT; main.ts binds 0.0.0.0, which Render requires.
 CMD ["node", "dist/main.js"]
