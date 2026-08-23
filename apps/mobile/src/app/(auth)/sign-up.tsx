@@ -1,13 +1,13 @@
 import { useState } from "react";
 import {
-  ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, Text, View,
+  ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, Text,
 } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/state/auth";
 import { Field } from "@/components/field";
-import { Logo } from "@/components/logo";
-import { color, space, radius, type, MONEY_FONT } from "@/theme/tokens";
+import { Wordmark } from "@/components/logo";
+import { color, space, GUTTER, radius, type, CONTINUOUS, DISPLAY_FONT } from "@/theme/tokens";
 
 export default function SignUpScreen() {
   const { signUp } = useAuth();
@@ -40,14 +40,14 @@ export default function SignUpScreen() {
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: color.canvas }}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ padding: space.lg, gap: space.base, paddingTop: space.huge }}
+        contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: 80, gap: space.base }}
         keyboardShouldPersistTaps="handled"
       >
-        <Logo size={56} />
-        <Text style={{ fontFamily: MONEY_FONT, fontSize: 30, color: color.ink, marginTop: space.sm }}>
-          Create account
+        <Wordmark size={26} />
+        <Text style={{ ...type.screenTitle, color: color.ink, marginTop: space.md }}>
+          Create your account
         </Text>
-        <Text style={{ ...type.body, color: color.muted, marginBottom: space.sm }}>
+        <Text style={{ ...type.meta, marginBottom: space.md }}>
           You start with a private Personal space. Shared ones come later.
         </Text>
 
@@ -57,32 +57,34 @@ export default function SignUpScreen() {
         <Field label="Password" value={password} onChange={setPassword}
                secureTextEntry autoComplete="new-password" onSubmit={submit} />
 
-        <Text style={{ ...type.caption, color: tooShort ? color.danger : color.muted }}>
+        <Text style={{ ...type.rowSub, color: tooShort ? color.danger : color.faint, lineHeight: 17 }}>
           At least 10 characters. Length beats symbols — a short phrase you can
           remember is stronger than P@ssw0rd.
         </Text>
 
         {error && (
-          <Text selectable style={{ ...type.caption, color: color.danger }}>{error}</Text>
+          <Text selectable style={{ ...type.body, color: color.danger }}>{error}</Text>
         )}
 
         <Pressable
           onPress={submit}
           disabled={!canSubmit}
           style={{
-            height: 50, borderRadius: radius.pill, alignItems: "center", justifyContent: "center",
-            backgroundColor: canSubmit ? color.accent : color.hairline, marginTop: space.sm,
+            height: 50, borderRadius: radius.card, ...CONTINUOUS,
+            alignItems: "center", justifyContent: "center", marginTop: space.sm,
+            backgroundColor: canSubmit ? color.accent : color.hairline,
           }}
         >
           {busy
             ? <ActivityIndicator color={color.onAccent} />
-            : <Text style={{ ...type.body, fontWeight: "600", color: canSubmit ? color.onAccent : color.muted }}>
+            : <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 15,
+                             color: canSubmit ? color.onAccent : color.faint }}>
                 Create account
               </Text>}
         </Pressable>
 
-        <Pressable onPress={() => router.back()} style={{ alignItems: "center", paddingVertical: space.md }}>
-          <Text style={{ ...type.body, color: color.accent }}>I already have an account</Text>
+        <Pressable onPress={() => router.back()} style={{ alignItems: "center", paddingVertical: space.base }}>
+          <Text style={type.action}>I already have an account</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>

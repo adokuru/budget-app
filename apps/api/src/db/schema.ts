@@ -93,6 +93,7 @@ export const categories = pgTable(
     name: text("name").notNull(),
     colorKey: text("color_key").notNull(),
     symbol: text("symbol").notNull(),
+    emoji: text("emoji").notNull().default("💸"),
     kind: text("kind", { enum: ["expense", "income"] }).notNull(),
     sort: integer("sort").notNull().default(0),
     archived: boolean("archived").notNull().default(false),

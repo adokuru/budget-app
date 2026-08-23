@@ -8,7 +8,7 @@ import {
   type AmountKey, type Currency,
 } from "@budget/shared";
 import { Keypad } from "@/components/keypad";
-import { Money } from "@/components/money";
+import { Amt } from "@/components/amt";
 import { useSpace } from "@/state/space";
 import { color, space, radius, type, CONTINUOUS } from "@/theme/tokens";
 
@@ -50,7 +50,7 @@ export default function ConverterSheet() {
         }}
       >
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={{ ...type.body, color: color.muted }}>Close</Text>
+          <Text style={{ ...type.body, color: color.faint }}>Close</Text>
         </Pressable>
         <Text style={{ ...type.body, fontWeight: "600", color: color.ink }}>Convert</Text>
         <View style={{ width: 44 }} />
@@ -67,11 +67,11 @@ export default function ConverterSheet() {
               backgroundColor: color.ink, alignItems: "center", justifyContent: "center",
             }}
           >
-            <Image source="sf:arrow.up.arrow.down" tintColor={color.onInk} style={{ width: 16, height: 16 }} />
+            <Image source="sf:arrow.up.arrow.down" tintColor={color.onAccent} style={{ width: 16, height: 16 }} />
           </Pressable>
         </View>
         <Side currency={to} onPick={setTo} minor={toMinorValue} />
-        <Text style={{ ...type.caption, color: color.muted, textAlign: "center", marginTop: space.xs }}>
+        <Text style={{ ...type.rowSub, color: color.faint, textAlign: "center", marginTop: space.xs }}>
           {rateLine}
         </Text>
       </View>
@@ -101,7 +101,7 @@ function Side({
     <View
       style={{
         flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-        backgroundColor: active ? color.ink : color.card,
+        backgroundColor: active ? color.ink : color.canvas,
         borderRadius: radius.card, ...CONTINUOUS, padding: space.lg,
       }}
     >
@@ -114,21 +114,21 @@ function Side({
           backgroundColor: active ? "#FFFFFF1A" : color.hairline,
         }}
       >
-        <Text style={{ ...type.label, fontWeight: "600", color: active ? color.onInk : color.ink }}>
+        <Text style={{ ...type.rowTitle, fontWeight: "600", color: active ? color.onAccent : color.ink }}>
           {currency}
         </Text>
         <Image
           source="sf:chevron.up.chevron.down"
-          tintColor={active ? color.onInk : color.muted}
+          tintColor={active ? color.onAccent : color.faint}
           style={{ width: 10, height: 10 }}
         />
       </Pressable>
 
-      <Money
+      <Amt
         minor={minor}
         currency={currency}
-        size="figure"
-        tone={active ? color.onInk : color.ink}
+        size="lg"
+        tone={active ? color.onAccent : color.ink}
       />
     </View>
   );

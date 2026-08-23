@@ -50,6 +50,7 @@ export class Category extends Model {
   @text("name") name: string;
   @text("color_key") colorKey: ColorKey;
   @text("symbol") symbol: string;
+  @text("emoji") emoji: string;
   @text("kind") kind: CategoryKind;
   @field("sort") sort: number;
   @field("archived") archived: boolean;

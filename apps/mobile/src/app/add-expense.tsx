@@ -1,40 +1,48 @@
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { Q } from "@nozbe/watermelondb";
 import {
-  applyKey, toMinor, snapshotRate,
+  applyKey, toMinor, snapshotRate, formatWhole, FALLBACK_EMOJI,
   type AmountKey, type CategoryKind,
 } from "@budget/shared";
-import { Keypad } from "@/components/keypad";
-import { CategoryPicker } from "@/components/category-picker";
-import { Money } from "@/components/money";
 import { database } from "@/db";
 import type { Category, Transaction } from "@/db/models";
 import { currentUserId } from "@/lib/session";
 import { useQuery } from "@/db/hooks";
 import { useSpace } from "@/state/space";
 import { syncQuietly } from "@/lib/sync";
-import { color, space, radius, type } from "@/theme/tokens";
-import { Q } from "@nozbe/watermelondb";
+import { Keypad } from "@/components/keypad";
+import { Amt } from "@/components/amt";
+import { Rule, EmojiPlain } from "@/components/primitives";
+import {
+  color, space, GUTTER, radius, type, CONTINUOUS, DISPLAY_FONT, CATEGORY_COLORS,
+} from "@/theme/tokens";
 
-export default function AddExpenseSheet() {
+export default function AddEntrySheet() {
   const { spaceId, baseCurrency, displayCurrency, rates } = useSpace();
   const [kind, setKind] = useState<CategoryKind>("expense");
   const [raw, setRaw] = useState("0");
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  const [page, setPage] = useState<"main" | "category">("main");
   const [saving, setSaving] = useState(false);
 
   const categories = useQuery<Category>(
     () =>
-      database
-        .get<Category>("categories")
-        .query(Q.where("space_id", spaceId), Q.where("kind", kind), Q.where("archived", false), Q.sortBy("sort", Q.asc)),
+      database.get<Category>("categories").query(
+        Q.where("space_id", spaceId), Q.where("kind", kind),
+        Q.where("archived", false), Q.sortBy("sort", Q.asc)
+      ),
     [spaceId, kind]
   );
 
   const minor = toMinor(raw || "0", displayCurrency);
-  const canSave = minor > 0 && categoryId !== null && !saving;
+  const category = categories.find((c) => c.id === categoryId);
+  const canSave = minor > 0 && category != null && !saving;
+  const isExpense = kind === "expense";
 
   async function save() {
     if (!canSave) return;
@@ -47,14 +55,14 @@ export default function AddExpenseSheet() {
     await database.write(async () => {
       await database.get<Transaction>("transactions").create((t) => {
         t.spaceId = spaceId;
-        t.categoryId = categoryId!;
+        t.categoryId = category!.id;
         t.createdBy = currentUserId();
         t.kind = kind;
         t.amountMinor = minor;
         t.currency = displayCurrency;
         t.rateToBase = rateToBase;
         t.baseMinor = baseMinorOf(minor);
-        t.note = null;
+        t.note = note.trim() || null;
         t.occurredAt = new Date();
         t.recurringRuleId = null;
       });
@@ -66,95 +74,187 @@ export default function AddExpenseSheet() {
     router.back();
   }
 
+  if (page === "category") {
+    return (
+      <View style={{ flex: 1, backgroundColor: color.canvas }}>
+        <View
+          style={{
+            flexDirection: "row", alignItems: "center", gap: space.md,
+            paddingHorizontal: GUTTER, paddingTop: space.base, paddingBottom: space.md,
+            borderBottomWidth: 1, borderBottomColor: color.hairline,
+          }}
+        >
+          <Pressable onPress={() => setPage("main")} hitSlop={12}>
+            <Image source="sf:chevron.left" tintColor={color.ink} style={{ width: 16, height: 16 }} />
+          </Pressable>
+          <Text style={{ ...type.screenTitle, color: color.ink }}>Category</Text>
+        </View>
+
+        <ScrollView contentContainerStyle={{ paddingBottom: space.xxl }}>
+          {categories.map((c, i) => (
+            <View key={c.id}>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setCategoryId(c.id);
+                  setPage("main");
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row", alignItems: "center", gap: space.md,
+                  paddingHorizontal: GUTTER, paddingVertical: space.base,
+                  backgroundColor: pressed ? color.pressed : "transparent",
+                })}
+              >
+                <EmojiPlain glyph={c.emoji || FALLBACK_EMOJI} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ ...type.rowTitleLg, color: color.ink }}>{c.name}</Text>
+                  <Text style={{ ...type.rowSub, color: CATEGORY_COLORS[c.colorKey] }}>
+                    {c.kind === "income" ? "Income" : "Expense"}
+                  </Text>
+                </View>
+                {categoryId === c.id && (
+                  <Image source="sf:checkmark" tintColor={color.accent} style={{ width: 14, height: 14 }} />
+                )}
+              </Pressable>
+              {i < categories.length - 1 && (
+                <View style={{ height: 1, backgroundColor: color.hairline, marginLeft: 56 }} />
+              )}
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: color.canvas }}>
+      {/* Header */}
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: space.lg,
-          paddingTop: space.lg,
-          paddingBottom: space.sm,
+          flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+          paddingHorizontal: GUTTER, paddingTop: space.md, paddingBottom: space.md,
         }}
       >
+        <Text style={{ ...type.screenTitle, color: color.ink }}>New entry</Text>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={{ ...type.body, color: color.muted }}>Cancel</Text>
-        </Pressable>
-
-        <SegmentedKind value={kind} onChange={(k) => { setKind(k); setCategoryId(null); }} />
-
-        <Pressable onPress={save} disabled={!canSave} hitSlop={12}>
-          <Text style={{ ...type.body, fontWeight: "600", color: canSave ? color.accent : color.hairline }}>
-            Save
-          </Text>
+          <Image source="sf:xmark" tintColor={color.faint} style={{ width: 15, height: 15 }} />
         </Pressable>
       </View>
 
-      <View style={{ alignItems: "center", paddingVertical: space.lg }}>
-        <Money
-          minor={kind === "expense" ? -minor : minor}
+      {/* Type toggle */}
+      <View style={{ paddingHorizontal: GUTTER, marginBottom: space.lg }}>
+        <View
+          style={{
+            flexDirection: "row", padding: 2,
+            borderWidth: 1, borderColor: color.hairline,
+            borderRadius: radius.chip, ...CONTINUOUS,
+          }}
+        >
+          {(["expense", "income"] as const).map((t) => {
+            const active = kind === t;
+            return (
+              <Pressable
+                key={t}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setKind(t);
+                  setCategoryId(null);
+                }}
+                style={{
+                  flex: 1, paddingVertical: 8, alignItems: "center",
+                  borderRadius: 8, ...CONTINUOUS,
+                  backgroundColor: active ? (t === "expense" ? color.ink : color.accent) : "transparent",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13, fontWeight: "700",
+                    color: active ? color.onAccent : color.faint,
+                  }}
+                >
+                  {t === "expense" ? "Expense" : "Income"}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Amount */}
+      <View style={{ alignItems: "center", marginBottom: space.lg }}>
+        <Text style={{ ...type.eyebrow, letterSpacing: 2, marginBottom: space.sm }}>Amount</Text>
+        <Amt
+          minor={minor}
           currency={displayCurrency}
-          size="display"
-          tone={minor === 0 ? color.hairline : kind === "expense" ? color.ink : color.accent}
-          hideFraction={!raw.includes(".")}
+          size="xl"
+          tone={minor === 0 ? color.fainter : isExpense ? color.ink : color.accent}
         />
       </View>
 
-      {/*
-        flexGrow:0 is load-bearing: a horizontal ScrollView inside a flex column
-        otherwise claims the remaining height and stretches the pills into circles.
-      */}
-      <CategoryPicker
-        categories={categories}
-        selectedId={categoryId}
-        onSelect={setCategoryId}
-      />
-
-      <View style={{ flex: 1 }} />
-
-      <View style={{ paddingHorizontal: space.lg, paddingBottom: space.lg }}>
-        <Keypad onKey={(k: AmountKey) => setRaw((r) => applyKey(r, k))} />
-      </View>
-    </View>
-  );
-}
-
-function SegmentedKind({
-  value,
-  onChange,
-}: {
-  value: CategoryKind;
-  onChange: (k: CategoryKind) => void;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        backgroundColor: color.hairline,
-        borderRadius: radius.pill,
-        padding: 2,
-      }}
-    >
-      {(["expense", "income"] as const).map((k) => (
+      {/* Category + note */}
+      <View style={{ paddingHorizontal: GUTTER, gap: space.sm, marginBottom: space.base }}>
         <Pressable
-          key={k}
-          onPress={() => {
-            Haptics.selectionAsync();
-            onChange(k);
-          }}
+          onPress={() => setPage("category")}
           style={{
-            paddingVertical: 6,
-            paddingHorizontal: space.base,
-            borderRadius: radius.pill,
-            backgroundColor: value === k ? color.card : "transparent",
+            flexDirection: "row", alignItems: "center", gap: space.sm,
+            paddingHorizontal: space.md, paddingVertical: 11,
+            borderWidth: 1, borderColor: color.hairline,
+            borderRadius: radius.chip, ...CONTINUOUS,
           }}
         >
-          <Text style={{ ...type.label, color: value === k ? color.ink : color.muted }}>
-            {k === "expense" ? "Spend" : "Income"}
+          {category ? (
+            <>
+              <Text style={{ fontSize: 16 }}>{category.emoji || FALLBACK_EMOJI}</Text>
+              <Text style={{ ...type.rowTitle, flex: 1, color: color.ink }} numberOfLines={1}>
+                {category.name}
+              </Text>
+            </>
+          ) : (
+            <Text style={{ ...type.rowTitle, flex: 1, color: color.fainter }}>Category</Text>
+          )}
+          <Image source="sf:chevron.down" tintColor={color.fainter} style={{ width: 11, height: 11 }} />
+        </Pressable>
+
+        <TextInput
+          value={note}
+          onChangeText={setNote}
+          placeholder="Note…"
+          placeholderTextColor={color.fainter}
+          style={{
+            fontSize: 13, color: color.ink,
+            paddingHorizontal: space.md, paddingVertical: 11,
+            borderWidth: 1, borderColor: color.hairline,
+            borderRadius: radius.chip, ...CONTINUOUS,
+          }}
+        />
+      </View>
+
+      {/* Numpad */}
+      <View style={{ paddingHorizontal: GUTTER, marginBottom: space.md }}>
+        <Keypad onKey={(k: AmountKey) => setRaw((r) => applyKey(r, k))} />
+      </View>
+
+      {/* Save */}
+      <View style={{ paddingHorizontal: GUTTER, paddingBottom: space.xxl }}>
+        <Pressable
+          onPress={save}
+          disabled={!canSave}
+          style={{
+            paddingVertical: 15, borderRadius: radius.card, ...CONTINUOUS,
+            alignItems: "center",
+            backgroundColor: !canSave ? color.hairline : isExpense ? color.ink : color.accent,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: DISPLAY_FONT, fontSize: 15,
+              color: canSave ? color.onAccent : color.faint,
+            }}
+          >
+            Save {isExpense ? "expense" : "income"}
           </Text>
         </Pressable>
-      ))}
+      </View>
     </View>
   );
 }

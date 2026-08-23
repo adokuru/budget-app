@@ -102,3 +102,12 @@ export function percentOf(spent: number, limit: number): number | null {
   if (limit <= 0) return null;
   return Math.max(0, Math.round((spent / limit) * 100));
 }
+
+/**
+ * Whole-unit money for prose lines ("of ₦450,000"), where a composed
+ * raised-decimal component cannot flow inline with text.
+ */
+export function formatWhole(minor: number, currency: Currency): string {
+  const { sign, symbol, integer } = formatParts(minor, currency);
+  return `${sign}${symbol}${integer}`;
+}

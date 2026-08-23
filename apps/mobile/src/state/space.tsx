@@ -12,6 +12,8 @@ type SpaceContextValue = {
   space: Space;
   spaceId: string;
   baseCurrency: Currency;
+  /** True for a shared space, which changes the header chip and shows authors. */
+  isShared: boolean;
   /** What amounts are displayed in. Defaults to the space's base currency. */
   displayCurrency: Currency;
   setDisplayCurrency: (c: Currency) => void;
@@ -72,6 +74,7 @@ export function SpaceProvider({ children }: { children: ReactNode }) {
         space,
         spaceId: space.id,
         baseCurrency: space.baseCurrency,
+        isShared: space.name.toLowerCase() !== "personal",
         displayCurrency,
         setDisplayCurrency: (currency) => {
           setDisplayCurrency(currency);

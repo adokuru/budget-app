@@ -1,23 +1,11 @@
-import { View } from "react-native";
-import { Image } from "expo-image";
-import { radius, CONTINUOUS, shadow } from "@/theme/tokens";
+import { Text } from "react-native";
+import { color, DISPLAY_FONT } from "@/theme/tokens";
 
-/** The app mark. Same artwork as the home-screen icon, so they read as one thing. */
-export function Logo({ size = 64 }: { size?: number }) {
+/** The wordmark. "Kobo" in ink, "Tracker" in green — as the design has it. */
+export function Wordmark({ size = 28 }: { size?: number }) {
   return (
-    <View
-      style={{
-        width: size, height: size,
-        borderRadius: size * 0.28, ...CONTINUOUS,
-        overflow: "hidden",
-        ...shadow.lifted,
-      }}
-    >
-      <Image
-        source={require("../../assets/images/icon.png")}
-        style={{ width: size, height: size }}
-        contentFit="cover"
-      />
-    </View>
+    <Text style={{ fontFamily: DISPLAY_FONT, fontSize: size, color: color.ink, letterSpacing: size * -0.02 }}>
+      Kobo<Text style={{ color: color.accent }}>Tracker</Text>
+    </Text>
   );
 }

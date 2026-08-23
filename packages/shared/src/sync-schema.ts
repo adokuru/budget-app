@@ -53,6 +53,7 @@ export const SYNC_SCHEMA = {
     name: str(),
     color_key: str(),
     symbol: str(),
+    emoji: str(),
     kind: str(),
     sort: num(),
     archived: bool(),

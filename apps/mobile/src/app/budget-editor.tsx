@@ -11,7 +11,7 @@ import { useSpace } from "@/state/space";
 import { syncQuietly } from "@/lib/sync";
 import { Keypad } from "@/components/keypad";
 import { CategoryPicker } from "@/components/category-picker";
-import { Money } from "@/components/money";
+import { Amt } from "@/components/amt";
 import { monthStart } from "@/lib/period";
 import { color, space, type } from "@/theme/tokens";
 
@@ -80,7 +80,7 @@ export default function BudgetEditorSheet() {
         }}
       >
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={{ ...type.body, color: color.muted }}>Cancel</Text>
+          <Text style={{ ...type.body, color: color.faint }}>Cancel</Text>
         </Pressable>
         <Text style={{ ...type.body, fontWeight: "600", color: color.ink }}>Monthly limit</Text>
         <Pressable onPress={save} disabled={!canSave} hitSlop={12}>
@@ -91,19 +91,15 @@ export default function BudgetEditorSheet() {
       </View>
 
       <View style={{ alignItems: "center", paddingVertical: space.base }}>
-        <Money
+        <Amt
           minor={minor}
           currency={displayCurrency}
-          size="display"
+          size="xl"
           tone={minor === 0 ? color.hairline : color.ink}
           hideFraction={!raw.includes(".")}
         />
       </View>
 
-      {/*
-        flexGrow:0 is load-bearing: a horizontal ScrollView inside a flex column
-        otherwise claims the remaining height and stretches the pills into circles.
-      */}
       <CategoryPicker
         categories={categories}
         selectedId={categoryId}

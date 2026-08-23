@@ -1,5 +1,4 @@
 import { Stack } from "expo-router/stack";
-import { PlatformColor } from "react-native";
 
 const TITLES: Record<string, string> = {
   index: "Home",
@@ -19,14 +18,10 @@ export default function TabStackLayout({ segment }: { segment: string }) {
   return (
     <Stack
       screenOptions={{
-        headerTransparent: true,
-        headerShadowVisible: false,
-        headerLargeTitle: true,
-        headerLargeTitleShadowVisible: false,
-        headerLargeStyle: { backgroundColor: "transparent" },
-        headerTitleStyle: { color: PlatformColor("label") },
-        headerBlurEffect: "none",
-        headerBackButtonDisplayMode: "minimal",
+        // The design draws its own wordmark header, so the native large
+        // title would be a second, competing one.
+        headerShown: false,
+        contentStyle: { backgroundColor: "#FFFFFF" },
       }}
     >
       <Stack.Screen name={screen} options={{ title: TITLES[screen] ?? "" }} />

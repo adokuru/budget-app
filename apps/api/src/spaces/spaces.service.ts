@@ -35,7 +35,7 @@ export class SpacesService {
       await tx.insert(categories).values(
         DEFAULT_CATEGORIES.map((c, i) => ({
           id: randomUUID(), spaceId, name: c.name, colorKey: c.colorKey,
-          symbol: c.symbol, kind: c.kind, sort: i,
+          symbol: c.symbol, emoji: c.emoji, kind: c.kind, sort: i,
         }))
       );
     });

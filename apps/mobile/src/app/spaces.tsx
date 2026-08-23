@@ -55,16 +55,16 @@ export default function SpacesSheet() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Text style={{ ...type.heading, color: color.ink }}>Spaces</Text>
+        <Text style={{ ...type.screenTitle, color: color.ink }}>Spaces</Text>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={{ ...type.body, color: color.muted }}>Done</Text>
+          <Text style={{ ...type.body, color: color.faint }}>Done</Text>
         </Pressable>
       </View>
 
       {spaces === null ? (
         <ActivityIndicator />
       ) : (
-        <View style={{ backgroundColor: color.card, borderRadius: radius.card, ...CONTINUOUS }}>
+        <View style={{ backgroundColor: color.canvas, borderRadius: radius.card, ...CONTINUOUS }}>
           {spaces.map((s, i) => (
             <Pressable
               key={s.id}
@@ -81,7 +81,7 @@ export default function SpacesSheet() {
               />
               <View style={{ flex: 1 }}>
                 <Text style={{ ...type.body, color: color.ink }}>{s.name}</Text>
-                <Text style={{ ...type.caption, color: color.muted }}>
+                <Text style={{ ...type.rowSub, color: color.faint }}>
                   {s.baseCurrency} · {s.role}
                 </Text>
               </View>
@@ -90,7 +90,7 @@ export default function SpacesSheet() {
         </View>
       )}
 
-      {error && <Text selectable style={{ ...type.caption, color: color.danger }}>{error}</Text>}
+      {error && <Text selectable style={{ ...type.rowSub, color: color.danger }}>{error}</Text>}
 
       {mode === "list" && (
         <View style={{ flexDirection: "row", gap: sp.sm }}>
@@ -101,7 +101,7 @@ export default function SpacesSheet() {
 
       {mode === "create" && (
         <View style={{ gap: sp.sm }}>
-          <Text style={{ ...type.micro, color: color.muted }}>New space</Text>
+          <Text style={{ ...type.eyebrow, color: color.faint }}>New space</Text>
           <TextInput
             value={name}
             onChangeText={setName}
@@ -120,7 +120,7 @@ export default function SpacesSheet() {
                   backgroundColor: c === currency ? color.ink : color.hairline,
                 }}
               >
-                <Text style={{ ...type.label, color: c === currency ? color.onInk : color.ink }}>
+                <Text style={{ ...type.rowTitle, color: c === currency ? color.onAccent : color.ink }}>
                   {CURRENCIES[c].symbol} {c}
                 </Text>
               </Pressable>
@@ -137,7 +137,7 @@ export default function SpacesSheet() {
 
       {mode === "join" && (
         <View style={{ gap: sp.sm }}>
-          <Text style={{ ...type.micro, color: color.muted }}>Invite code</Text>
+          <Text style={{ ...type.eyebrow, color: color.faint }}>Invite code</Text>
           <TextInput
             value={code}
             onChangeText={(t) => setCode(t.toUpperCase().slice(0, 6))}
@@ -162,8 +162,8 @@ export default function SpacesSheet() {
 const inputStyle = {
   ...type.body,
   color: color.ink,
-  backgroundColor: color.card,
-  borderRadius: radius.row,
+  backgroundColor: color.canvas,
+  borderRadius: radius.chip,
   ...CONTINUOUS,
   paddingHorizontal: sp.base,
   paddingVertical: 14,
@@ -183,7 +183,7 @@ function Primary({
       }}
     >
       {busy ? <ActivityIndicator color={color.onAccent} /> : (
-        <Text style={{ ...type.body, fontWeight: "600", color: off ? color.muted : color.onAccent }}>
+        <Text style={{ ...type.body, fontWeight: "600", color: off ? color.faint : color.onAccent }}>
           {label}
         </Text>
       )}
@@ -197,10 +197,10 @@ function Secondary({ label, onPress }: { label: string; onPress: () => void }) {
       onPress={onPress}
       style={{
         flex: 1, height: 44, borderRadius: radius.pill,
-        alignItems: "center", justifyContent: "center", backgroundColor: color.card,
+        alignItems: "center", justifyContent: "center", backgroundColor: color.canvas,
       }}
     >
-      <Text style={{ ...type.label, color: color.ink, fontWeight: "600" }}>{label}</Text>
+      <Text style={{ ...type.rowTitle, color: color.ink, fontWeight: "600" }}>{label}</Text>
     </Pressable>
   );
 }

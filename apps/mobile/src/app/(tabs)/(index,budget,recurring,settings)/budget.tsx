@@ -1,24 +1,22 @@
 import { useMemo } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Link } from "expo-router";
-import { Image } from "expo-image";
 import { Q } from "@nozbe/watermelondb";
-import { sumMinor, convertMinor, percentOf } from "@budget/shared";
+import { sumMinor, convertMinor, percentOf, formatWhole, FALLBACK_EMOJI } from "@budget/shared";
 import { database } from "@/db";
 import type { Budget, Category, Transaction } from "@/db/models";
 import { useQuery } from "@/db/hooks";
 import { useSpace } from "@/state/space";
-import { RadialSpend, type Segment } from "@/components/radial-spend";
-import { CategoryBlock } from "@/components/category-block";
-import { MiniStat } from "@/components/mini-stat";
+import { Amt, AmtShort } from "@/components/amt";
+import { AppHeader } from "@/components/app-header";
+import { Rule, Label, Thin, EmojiPlain, Row } from "@/components/primitives";
 import { EmptyState } from "@/components/empty-state";
-import { SectionHeader } from "@/components/section-header";
-import { Badge } from "@/components/badge";
+import { Fab } from "@/components/fab";
 import { monthStart } from "@/lib/period";
-import { color, space, radius, type, CONTINUOUS, tint } from "@/theme/tokens";
+import { color, space, GUTTER, type, CATEGORY_COLORS } from "@/theme/tokens";
 
 export default function BudgetScreen() {
-  const { spaceId, baseCurrency, displayCurrency, rates } = useSpace();
+  const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
   const since = useMemo(() => monthStart().getTime(), []);
 
   const txns = useQuery<Transaction>(
@@ -30,7 +28,8 @@ export default function BudgetScreen() {
     [spaceId, since]
   );
   const categories = useQuery<Category>(
-    () => database.get<Category>("categories").query(Q.where("space_id", spaceId)),
+    () => database.get<Category>("categories")
+      .query(Q.where("space_id", spaceId), Q.sortBy("sort", Q.asc)),
     [spaceId]
   );
   const budgets = useQuery<Budget>(
@@ -48,132 +47,143 @@ export default function BudgetScreen() {
     return m;
   }, [txns]);
 
-  const total = sumMinor([...spentBy.values()]);
+  const totalSpent = sumMinor([...spentBy.values()]);
   const budgeted = sumMinor(budgets.map((b) => b.amountMinor));
-  const onTrack = budgeted === 0 || total <= budgeted;
+  const remaining = budgeted - totalSpent;
+  const used = percentOf(totalSpent, budgeted);
 
-  const segments: Segment[] = useMemo(
-    () =>
-      categories
-        .filter((c) => (spentBy.get(c.id) ?? 0) > 0)
-        .map((c) => ({ id: c.id, colorKey: c.colorKey, value: spentBy.get(c.id)! }))
-        .sort((a, b) => b.value - a.value),
-    [categories, spentBy]
-  );
-
-  const envelopes = budgets
-    .map((b) => ({ budget: b, category: categories.find((c) => c.id === b.categoryId) }))
-    .filter((e): e is { budget: Budget; category: Category } => Boolean(e.category))
-    .sort((a, b) =>
-      (percentOf(spentBy.get(b.category.id) ?? 0, b.budget.amountMinor) ?? 0) -
-      (percentOf(spentBy.get(a.category.id) ?? 0, a.budget.amountMinor) ?? 0)
-    );
-
-  const overCount = envelopes.filter(
-    (e) => (spentBy.get(e.category.id) ?? 0) > e.budget.amountMinor
-  ).length;
+  // Only categories that have a limit or some spend are worth a row.
+  const rows = categories
+    .filter((c) => c.kind === "expense")
+    .map((c) => ({
+      category: c,
+      spent: spentBy.get(c.id) ?? 0,
+      limit: budgets.find((b) => b.categoryId === c.id)?.amountMinor ?? 0,
+    }))
+    .filter((r) => r.limit > 0 || r.spent > 0);
 
   return (
+    <>
     <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
+      contentInsetAdjustmentBehavior="never"
       style={{ backgroundColor: color.canvas }}
-      contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: 140 }}
+      contentContainerStyle={{ paddingBottom: 140 }}
     >
-      <View
-        style={{
-          backgroundColor: color.card, borderRadius: radius.card, ...CONTINUOUS,
-          paddingVertical: space.xl, alignItems: "center", gap: space.base,
-        }}
-      >
-        {segments.length > 0 ? (
-          <RadialSpend
-            segments={segments}
-            totalMinor={toDisplay(total)}
-            currency={displayCurrency}
-          />
-        ) : (
-          <Text style={{ ...type.caption, color: color.muted, paddingVertical: space.xxl }}>
-            No spending this month yet
-          </Text>
-        )}
+      <AppHeader spaceName={current.name} isShared={isShared} />
 
-        {budgeted > 0 && (
-          <Badge
-            label={onTrack ? "On track" : `${overCount} over budget`}
-            background={tint(onTrack ? color.accent : color.danger, 0.14)}
-            tone={onTrack ? color.accent : color.danger}
-          />
-        )}
+      <View style={{ paddingHorizontal: GUTTER, paddingTop: space.base, paddingBottom: space.xl }}>
+        <Text style={{ ...type.eyebrow, marginBottom: space.sm }}>
+          {monthLabel()} budget
+        </Text>
+        <Amt minor={toDisplay(budgeted)} currency={displayCurrency} size="xl" />
 
-        {segments.length > 0 && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, paddingHorizontal: space.lg,
-                         justifyContent: "center" }}>
-            {segments.slice(0, 5).map((s) => {
-              const cat = categories.find((c) => c.id === s.id)!;
-              return (
-                <View key={s.id} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                  <View style={{ width: 7, height: 7, borderRadius: 4,
-                                 backgroundColor: color.category[cat.colorKey] }} />
-                  <Text style={{ ...type.caption, color: color.muted }}>{cat.name}</Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.lg, marginTop: space.base }}>
+          <Figure label="Spent" value={<AmtShort minor={toDisplay(totalSpent)} currency={displayCurrency} size={15} />} />
+          <Divider />
+          <Figure
+            label="Remaining"
+            value={
+              <AmtShort
+                minor={toDisplay(remaining)}
+                currency={displayCurrency}
+                size={15}
+                tone={remaining < 0 ? color.danger : color.accent}
+              />
+            }
+          />
+          <Divider />
+          <Figure
+            label="Used"
+            value={
+              <Text style={{ fontSize: 15, fontWeight: "800", color: color.ink }}>
+                {used === null ? "—" : `${used}%`}
+              </Text>
+            }
+          />
+        </View>
       </View>
 
-      <View style={{ flexDirection: "row", gap: space.sm }}>
-        <MiniStat label="Budgeted" minor={toDisplay(budgeted)} currency={displayCurrency}
-                  symbol="target" tone={color.accent} />
-        <MiniStat label="Spent" minor={toDisplay(total)} currency={displayCurrency}
-                  symbol="creditcard.fill" tone={color.warning} />
-      </View>
+      <Rule />
 
-      <SectionHeader
-        title="Envelopes"
-        trailing={envelopes.length ? `${envelopes.length} set` : undefined}
-      />
-
-      {envelopes.length === 0 ? (
+      {rows.length === 0 ? (
         <EmptyState
-          symbol="chart.pie"
-          title="No envelopes yet"
-          body="Set a monthly limit per category — ₦200,000 for food, say — and this screen tracks you against it."
+          symbol="🎯"
+          title="No budgets set"
+          body="Give a category a monthly limit — ₦200,000 for food, say — and this screen tracks you against it."
           action={{ label: "Set a budget", href: "/budget-editor" }}
         />
       ) : (
         <>
-          <View style={{ gap: space.sm }}>
-            {envelopes.map(({ budget, category }, i) => (
-              <CategoryBlock
-                key={budget.id}
-                index={i}
-                name={category.name}
-                colorKey={category.colorKey}
-                symbol={category.symbol}
-                spentMinor={toDisplay(spentBy.get(category.id) ?? 0)}
-                limitMinor={toDisplay(budget.amountMinor)}
-                shareOfSpend={percentOf(spentBy.get(category.id) ?? 0, total) ?? 0}
-                currency={displayCurrency}
-              />
-            ))}
-          </View>
+          <Label
+            action={
+              <Link href="/budget-editor" asChild>
+                <Pressable hitSlop={10}>
+                  <Text style={type.action}>Edit</Text>
+                </Pressable>
+              </Link>
+            }
+          >
+            Categories
+          </Label>
 
-          <Link href="/budget-editor" asChild>
-            <Pressable
-              style={{
-                flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-                height: 46, borderRadius: radius.pill, backgroundColor: color.card,
-              }}
-            >
-              <Image source="sf:plus" tintColor={color.accent} style={{ width: 14, height: 14 }} />
-              <Text style={{ ...type.label, fontWeight: "600", color: color.accent }}>
-                Add or edit a budget
-              </Text>
-            </Pressable>
-          </Link>
+          {rows.map(({ category, spent, limit }, i) => {
+            const pct = percentOf(spent, limit);
+            const over = limit > 0 && spent > limit;
+            return (
+              <View key={category.id}>
+                <Row style={{ paddingVertical: space.base + 2 }}>
+                  <EmojiPlain glyph={category.emoji || FALLBACK_EMOJI} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View
+                      style={{
+                        flexDirection: "row", alignItems: "baseline",
+                        justifyContent: "space-between", marginBottom: space.sm,
+                      }}
+                    >
+                      <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
+                        {category.name}
+                      </Text>
+                      <Text style={type.rowSub}>
+                        {formatWhole(toDisplay(spent), displayCurrency)}
+                        {limit > 0 ? ` / ${formatWhole(toDisplay(limit), displayCurrency)}` : ""}
+                      </Text>
+                    </View>
+                    <Thin spent={spent} budget={limit || spent} tone={CATEGORY_COLORS[category.colorKey]} />
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 11, fontWeight: "700", width: 52, textAlign: "right",
+                      color: spent === 0 ? color.fainter : over ? color.danger : color.accent,
+                    }}
+                  >
+                    {spent === 0 ? "—" : over ? "over" : pct === null ? "—" : `${pct}%`}
+                  </Text>
+                </Row>
+                {i < rows.length - 1 && <Rule />}
+              </View>
+            );
+          })}
         </>
       )}
     </ScrollView>
+    <Fab />
+    </>
   );
+}
+
+function Figure({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <View style={{ gap: 2 }}>
+      <Text style={type.statLabel}>{label}</Text>
+      {value}
+    </View>
+  );
+}
+
+const Divider = () => (
+  <View style={{ width: 1, height: 30, backgroundColor: color.hairline }} />
+);
+
+function monthLabel(d: Date = new Date()): string {
+  return d.toLocaleDateString(undefined, { month: "long" });
 }

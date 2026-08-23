@@ -14,7 +14,7 @@ import { useSpace } from "@/state/space";
 import { syncQuietly } from "@/lib/sync";
 import { Keypad } from "@/components/keypad";
 import { CategoryPicker } from "@/components/category-picker";
-import { Money } from "@/components/money";
+import { Amt } from "@/components/amt";
 import { color, space, radius, type, CONTINUOUS } from "@/theme/tokens";
 
 const FREQS: { key: Freq; label: string }[] = [
@@ -109,7 +109,7 @@ export default function RecurringRuleSheet() {
         }}
       >
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={{ ...type.body, color: color.muted }}>Cancel</Text>
+          <Text style={{ ...type.body, color: color.faint }}>Cancel</Text>
         </Pressable>
         <Text style={{ ...type.body, fontWeight: "600", color: color.ink }}>Recurring</Text>
         <Pressable onPress={save} disabled={!canSave} hitSlop={12}>
@@ -120,14 +120,14 @@ export default function RecurringRuleSheet() {
       </View>
 
         <View style={{ alignItems: "center", paddingTop: space.sm }}>
-          <Money
+          <Amt
             minor={minor}
             currency={displayCurrency}
-            size="display"
+            size="xl"
             tone={minor === 0 ? color.hairline : kind === "income" ? color.accent : color.ink}
             hideFraction={!raw.includes(".")}
           />
-          <Text style={{ ...type.caption, color: color.muted, marginTop: space.xs }}>
+          <Text style={{ ...type.rowSub, color: color.faint, marginTop: space.xs }}>
             {describeRecurrence(recurrence)}
           </Text>
         </View>
@@ -162,13 +162,13 @@ export default function RecurringRuleSheet() {
         <View
           style={{
             marginHorizontal: space.lg, padding: space.base,
-            backgroundColor: color.card, borderRadius: radius.row, ...CONTINUOUS,
+            backgroundColor: color.canvas, borderRadius: radius.chip, ...CONTINUOUS,
             flexDirection: "row", alignItems: "center", gap: space.md,
           }}
         >
           <View style={{ flex: 1 }}>
             <Text style={{ ...type.body, color: color.ink }}>Post automatically</Text>
-            <Text style={{ ...type.caption, color: color.muted }}>
+            <Text style={{ ...type.rowSub, color: color.faint }}>
               {autoPost
                 ? "Added on the date without asking. Good for rent and subscriptions."
                 : "Asks you to confirm it landed. Better for salary, which can be late."}
@@ -208,10 +208,10 @@ function Segmented({
           onPress={() => { Haptics.selectionAsync(); onChange(o.key); }}
           style={{
             flex: 1, paddingVertical: 7, borderRadius: radius.pill, alignItems: "center",
-            backgroundColor: value === o.key ? color.card : "transparent",
+            backgroundColor: value === o.key ? color.canvas : "transparent",
           }}
         >
-          <Text style={{ ...type.label, color: value === o.key ? color.ink : color.muted }}>
+          <Text style={{ ...type.rowTitle, color: value === o.key ? color.ink : color.faint }}>
             {o.label}
           </Text>
         </Pressable>
@@ -224,7 +224,7 @@ function Segmented({
 function DayGrid({ value, onChange }: { value: number; onChange: (d: number) => void }) {
   return (
     <View style={{ paddingHorizontal: space.lg, gap: space.xs }}>
-      <Text style={{ ...type.micro, color: color.muted }}>Day of month</Text>
+      <Text style={{ ...type.eyebrow, color: color.faint }}>Day of month</Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
         {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => {
           const active = d === value;
@@ -235,16 +235,16 @@ function DayGrid({ value, onChange }: { value: number; onChange: (d: number) => 
               style={{
                 width: 40, height: 34, borderRadius: radius.chip, ...CONTINUOUS,
                 alignItems: "center", justifyContent: "center",
-                backgroundColor: active ? color.ink : color.card,
+                backgroundColor: active ? color.ink : color.canvas,
               }}
             >
-              <Text style={{ ...type.label, color: active ? color.onInk : color.ink }}>{d}</Text>
+              <Text style={{ ...type.rowTitle, color: active ? color.onAccent : color.ink }}>{d}</Text>
             </Pressable>
           );
         })}
       </View>
       {value > 28 && (
-        <Text style={{ ...type.caption, color: color.muted }}>
+        <Text style={{ ...type.rowSub, color: color.faint }}>
           Months without a {ordinal(value)} use their last day.
         </Text>
       )}

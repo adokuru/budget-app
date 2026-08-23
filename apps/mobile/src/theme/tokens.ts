@@ -1,103 +1,100 @@
 import type { TextStyle } from "react-native";
-import { CATEGORY_COLORS, type ColorKey } from "@budget/shared";
 
 /**
- * The single source of truth for the visual system.
- *
- * Light canvas, but the colour lives in solid category blocks rather than in
- * accents on white cards — the treatment from the LazyInterface reference.
- * A white card with a small coloured dot reads as a spreadsheet; a filled
- * block reads as money you can see at a glance.
+ * Ported from the Figma design. Editorial and light: white ground, hairline
+ * rules instead of cards, colour reserved for meaning (a category, a state)
+ * rather than decoration.
  */
 
 export const color = {
-  canvas: "#F6F6F3",   // warm off-white, never pure white
-  card: "#FFFFFF",
-  ink: "#0E0E11",      // hero card background AND primary text
-  inkSoft: "#1A1A20",  // raised surfaces on top of ink
-  onInk: "#FFFFFF",
-  muted: "#6B6B76",
-  faint: "#9A9AA5",
-  hairline: "#0000001A",
-  accent: "#00A860",   // Nigerian green
+  canvas: "#FFFFFF",
+  /** Inset chips, numpad keys, avatars behind emoji. */
+  chip: "#F5F5F3",
+  chipAlt: "#F2F2F0",
+  pressed: "#F7F7F5",
+
+  ink: "#111114",
+  body: "#555553",
+  faint: "#AAAAAA",
+  fainter: "#CCCCCA",
+
+  hairline: "#EFEFED",
+  border: "#E0E0DE",
+
+  accent: "#00A860",
   onAccent: "#FFFFFF",
-  danger: "#E5484D",
-  warning: "#F5A524",
-  category: CATEGORY_COLORS,
+  danger: "#E5383B",
+  warning: "#F59E0B",
 } as const;
 
 /**
- * Elements sitting on a saturated category block. Tinted white rather than a
- * fixed grey, so one set works on every category colour.
+ * One colour per category, no tinted background — the design uses the colour
+ * only on the progress bar and the odd inline figure.
  */
-export const onColor = {
-  text: "#FFFFFF",
-  subtext: "rgba(255,255,255,0.78)",
-  chip: "rgba(255,255,255,0.22)",
-  badge: "rgba(255,255,255,0.26)",
-  track: "rgba(255,255,255,0.28)",
+export const CATEGORY_COLORS = {
+  coral: "#E8643A",   // Food
+  blue: "#3570E2",    // Transport
+  amber: "#D4860A",   // Bills & PHCN
+  violet: "#7B5CE8",  // Data & Airtime
+  pink: "#D4477A",    // Shopping
+  emerald: "#00A860", // Savings & Ajo
+  brown: "#92400E",   // Rent
+  teal: "#0D7D8A",    // School fees
+  purple: "#6240D4",  // Family support
+  crimson: "#C0293A", // Health
 } as const;
 
-/** Alpha tint of any hex, for icon pills and soft backgrounds. */
+export type ColorKey = keyof typeof CATEGORY_COLORS;
+
+/** Alpha tint of any hex, for the rare soft background. */
 export function tint(hex: string, alpha = 0.12): string {
   const a = Math.round(alpha * 255).toString(16).padStart(2, "0");
   return `${hex}${a}`;
 }
 
-/**
- * A slightly deeper partner for each category, so a filled row can carry a
- * gradient instead of reading as a flat swatch.
- */
-export const CATEGORY_DEEP: Record<ColorKey, string> = {
-  coral: "#E14F42",
-  violet: "#6A56F0",
-  emerald: "#1F8757",
-  blue: "#2568D8",
-  amber: "#DE8A0C",
-  teal: "#0E9488",
-  purple: "#7440E0",
-  pink: "#D62E7F",
-  orange: "#E15F0A",
-  cyan: "#049CB4",
-};
-
+/** The design works on a 20px gutter and a 4px rhythm. */
 export const space = {
-  xs: 4, sm: 8, md: 12, base: 16, lg: 20, xl: 24, xxl: 32, xxxl: 40, huge: 56,
+  xs: 4, sm: 8, md: 12, base: 14, lg: 20, xl: 24, xxl: 32, huge: 48,
 } as const;
 
+export const GUTTER = 20;
+
 export const radius = {
-  card: 24, row: 18, chip: 12, pill: 999,
+  sheet: 24, card: 12, chip: 10, pill: 999,
 } as const;
 
 /** Apple's squircle. Every rounded corner that is not a capsule gets it. */
 export const CONTINUOUS = { borderCurve: "continuous" } as const;
 
 export const shadow = {
-  /** Hero card and anything that should float above the canvas. */
-  lifted: { boxShadow: "0 10px 30px rgba(14, 14, 17, 0.14)" },
-  /** Coloured rows: a tinted shadow reads as the row's own light. */
-  glow: (hex: string) => ({ boxShadow: `0 6px 18px ${tint(hex, 0.32)}` }),
-  fab: { boxShadow: "0 6px 20px rgba(0, 168, 96, 0.35)" },
+  fab: { boxShadow: "0 4px 16px rgba(0, 168, 96, 0.45)" },
+  sheet: { boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.12)" },
 } as const;
 
 /**
- * SF Pro for everything readable; Manrope for money numerals only.
- * One face to read, one face for money. Nothing italic, ever.
+ * Plus Jakarta Sans ExtraBold for figures, titles and nav labels — exactly
+ * where the design applies it. Everything else is the system face.
  */
-export const MONEY_FONT = "Manrope_800ExtraBold";
+export const DISPLAY_FONT = "PlusJakartaSans_800ExtraBold";
+export const DISPLAY_FONT_BOLD = "PlusJakartaSans_700Bold";
 
 export const type = {
-  display: { fontFamily: MONEY_FONT, fontSize: 44, lineHeight: 48 },
-  figure:  { fontFamily: MONEY_FONT, fontSize: 24, lineHeight: 28 },
-  title:   { fontSize: 28, lineHeight: 34, fontWeight: "700" },
-  heading: { fontSize: 19, lineHeight: 25, fontWeight: "700" },
-  body:    { fontSize: 16, lineHeight: 22, fontWeight: "400" },
-  label:   { fontSize: 14, lineHeight: 18, fontWeight: "500" },
-  caption: { fontSize: 12, lineHeight: 16, fontWeight: "400" },
-  micro:   { fontSize: 11, lineHeight: 14, fontWeight: "700",
-             letterSpacing: 0.9, textTransform: "uppercase" },
-  nano:    { fontSize: 10, lineHeight: 13, fontWeight: "600",
-             letterSpacing: 0.6, textTransform: "uppercase" },
+  /** Section eyebrows: 10px, extrabold, wide tracking, uppercase. */
+  eyebrow: {
+    fontSize: 10, lineHeight: 14, fontWeight: "800",
+    letterSpacing: 1.4, textTransform: "uppercase", color: color.faint,
+  },
+  screenTitle: { fontSize: 16, lineHeight: 21, fontWeight: "700" },
+  rowTitle: { fontSize: 13, lineHeight: 18, fontWeight: "500" },
+  rowTitleLg: { fontSize: 14, lineHeight: 19, fontWeight: "500" },
+  rowSub: { fontSize: 11, lineHeight: 15, fontWeight: "400", color: color.faint },
+  body: { fontSize: 13, lineHeight: 18, fontWeight: "400" },
+  meta: { fontSize: 12, lineHeight: 16, fontWeight: "400", color: color.faint },
+  action: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: color.accent },
+  statLabel: {
+    fontSize: 10, lineHeight: 13, fontWeight: "600",
+    letterSpacing: 0.5, textTransform: "uppercase", color: color.faint,
+  },
 } as const;
 
 /** Money always aligns in columns. */
@@ -111,6 +108,6 @@ export const TABULAR: { fontVariant: TextStyle["fontVariant"] } = {
  */
 export const spring = {
   snappy: { damping: 20, stiffness: 300 },  // buttons, chips, taps
-  smooth: { damping: 26, stiffness: 180 },  // cards, transitions
-  gentle: { damping: 30, stiffness: 120 },  // numbers, charts, bars
+  smooth: { damping: 26, stiffness: 180 },  // sheets, transitions
+  gentle: { damping: 30, stiffness: 120 },  // numbers, bars
 } as const;

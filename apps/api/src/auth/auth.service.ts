@@ -198,6 +198,7 @@ async function seedPersonalSpace(tx: Db, userId: string): Promise<void> {
       name: c.name,
       colorKey: c.colorKey,
       symbol: c.symbol,
+      emoji: c.emoji,
       kind: c.kind,
       sort: i,
     }))

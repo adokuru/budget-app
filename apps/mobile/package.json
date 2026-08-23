@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@budget/shared": "workspace:*",
-    "@expo-google-fonts/manrope": "^0.4.2",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/ui": "~57.0.12",
     "@nozbe/watermelondb": "^0.28.0",
     "@nozbe/with-observables": "^1.6.0",
@@ -19,7 +19,6 @@
     "expo-glass-effect": "~57.0.1",
     "expo-haptics": "^57.0.1",
     "expo-image": "~57.0.3",
-    "expo-linear-gradient": "^57.0.1",
     "expo-linking": "~57.0.7",
     "expo-router": "~57.0.15",
     "expo-secure-store": "^57.0.1",

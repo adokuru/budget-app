@@ -77,14 +77,14 @@ export default function MembersSheet() {
       contentContainerStyle={{ padding: sp.lg, gap: sp.base, paddingBottom: sp.xxl }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Text style={{ ...type.heading, color: color.ink }}>{current.name}</Text>
+        <Text style={{ ...type.screenTitle, color: color.ink }}>{current.name}</Text>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={{ ...type.body, color: color.muted }}>Done</Text>
+          <Text style={{ ...type.body, color: color.faint }}>Done</Text>
         </Pressable>
       </View>
 
       {members === null ? <ActivityIndicator /> : (
-        <View style={{ backgroundColor: color.card, borderRadius: radius.card, ...CONTINUOUS }}>
+        <View style={{ backgroundColor: color.canvas, borderRadius: radius.card, ...CONTINUOUS }}>
           {members.map((m, i) => (
             <View
               key={m.id}
@@ -100,7 +100,7 @@ export default function MembersSheet() {
                   alignItems: "center", justifyContent: "center",
                 }}
               >
-                <Text style={{ ...type.label, fontWeight: "700", color: color.accent }}>
+                <Text style={{ ...type.rowTitle, fontWeight: "700", color: color.accent }}>
                   {m.name.slice(0, 1).toUpperCase()}
                 </Text>
               </View>
@@ -109,12 +109,12 @@ export default function MembersSheet() {
                 <Text style={{ ...type.body, color: color.ink }}>
                   {m.name}{m.id === user?.id ? " (you)" : ""}
                 </Text>
-                <Text style={{ ...type.caption, color: color.muted }}>{m.role}</Text>
+                <Text style={{ ...type.rowSub, color: color.faint }}>{m.role}</Text>
               </View>
 
               {isOwner && m.id !== user?.id && (
                 <Pressable onPress={() => remove(m)} hitSlop={10}>
-                  <Text style={{ ...type.label, color: color.danger }}>Remove</Text>
+                  <Text style={{ ...type.rowTitle, color: color.danger }}>Remove</Text>
                 </Pressable>
               )}
             </View>
@@ -122,7 +122,7 @@ export default function MembersSheet() {
         </View>
       )}
 
-      {error && <Text selectable style={{ ...type.caption, color: color.danger }}>{error}</Text>}
+      {error && <Text selectable style={{ ...type.rowSub, color: color.danger }}>{error}</Text>}
 
       {code ? (
         <View
@@ -131,8 +131,8 @@ export default function MembersSheet() {
             padding: sp.lg, gap: sp.sm, alignItems: "center",
           }}
         >
-          <Text style={{ ...type.micro, color: color.muted }}>Invite code · expires in 7 days</Text>
-          <Text selectable style={{ ...type.title, color: color.onInk, letterSpacing: 6 }}>
+          <Text style={{ ...type.eyebrow, color: color.faint }}>Invite code · expires in 7 days</Text>
+          <Text selectable style={{ ...type.screenTitle, color: color.onAccent, letterSpacing: 6 }}>
             {code}
           </Text>
           <Pressable
@@ -147,7 +147,7 @@ export default function MembersSheet() {
           >
             <Image source="sf:square.and.arrow.up" tintColor={color.onAccent}
                    style={{ width: 15, height: 15 }} />
-            <Text style={{ ...type.label, fontWeight: "600", color: color.onAccent }}>Share</Text>
+            <Text style={{ ...type.rowTitle, fontWeight: "600", color: color.onAccent }}>Share</Text>
           </Pressable>
         </View>
       ) : (
