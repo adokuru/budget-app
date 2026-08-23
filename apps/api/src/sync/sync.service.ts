@@ -1,5 +1,5 @@
 import { Inject, Injectable, ConflictException } from "@nestjs/common";
-import { and, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, eq, getTableColumns, isNull, sql } from "drizzle-orm";
 import { SYNC_SCHEMA, SYNC_TABLE_NAMES, type SyncTableName } from "@budget/shared";
 import { DB, type Db } from "../db/db.module";
 import {
@@ -14,6 +14,20 @@ export type PullResult = { changes: Changes; timestamp: number };
 const TABLES = {
   users, spaces, memberships, categories, transactions, recurring_rules: recurringRules, budgets,
 } as const;
+
+/**
+ * Timestamp columns per table, derived from the Drizzle schema rather than a
+ * hand-kept list, so adding a date column cannot silently break a push.
+ */
+const DATE_COLUMNS: Partial<Record<SyncTableName, Set<string>>> = {};
+for (const [name, table] of Object.entries(TABLES)) {
+  const columns = Object.values(
+    getTableColumns(table as never)
+  ) as { name: string; columnType: string }[];
+  DATE_COLUMNS[name as SyncTableName] = new Set(
+    columns.filter((c) => c.columnType === "PgTimestamp").map((c) => c.name)
+  );
+}
 
 /** Tables whose rows record who created them. */
 const HAS_AUTHOR = new Set<SyncTableName>(["transactions", "spaces"]);
@@ -219,6 +233,20 @@ export class SyncService {
     // the field. Trusting a client-supplied created_by would let anyone
     // attribute their spending to another family member.
     if (HAS_AUTHOR.has(table)) clean.created_by = userId;
+
+    // WatermelonDB sends dates as epoch millis. Postgres cannot parse a bare
+    // number as a timestamptz, so every push with a date failed until this
+    // ran — the mirror of the coercion the pull side does.
+    const dateColumns = DATE_COLUMNS[table];
+    if (dateColumns) {
+      for (const key of Object.keys(clean)) {
+        if (!dateColumns.has(key)) continue;
+        const v = clean[key];
+        if (typeof v === "number") clean[key] = new Date(v);
+        else if (typeof v === "string" && /^\d+$/.test(v)) clean[key] = new Date(Number(v));
+      }
+    }
+
     clean.updated_at = new Date();
 
     const cols = Object.keys(clean);

@@ -58,13 +58,20 @@ export function CategoryBlock({
   const fillStyle = useAnimatedStyle(() => ({ width: `${fill.value * 100}%` }));
 
   return (
+    /*
+      Two wrappers on purpose: Reanimated warns that a layout animation and an
+      animated transform on the same component fight over `transform`. The
+      outer view owns the entrance, the inner one owns the press.
+    */
+    <Animated.View
+      entering={reduced ? undefined : FadeInDown.delay(index * 45).springify().damping(24)}
+    >
     <AnimatedPressable
       accessibilityRole={onPress ? "button" : undefined}
       accessibilityLabel={`${name}, ${pct === null ? "no limit" : `${pct}% of limit`}`}
       onPressIn={() => { if (!reduced && onPress) press.value = withSpring(0.98, spring.snappy); }}
       onPressOut={() => { press.value = withSpring(1, spring.snappy); }}
       onPress={onPress}
-      entering={reduced ? undefined : FadeInDown.delay(index * 45).springify().damping(24)}
       style={[pressStyle, { borderRadius: radius.row, ...CONTINUOUS, ...shadow.glow(base) }]}
     >
       <LinearGradient
@@ -128,5 +135,6 @@ export function CategoryBlock({
         )}
       </LinearGradient>
     </AnimatedPressable>
+    </Animated.View>
   );
 }

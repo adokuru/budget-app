@@ -344,3 +344,65 @@ test("boolean columns survive Postgres round-tripping", async () => {
   assert.equal(cat.archived, false);
   assert.equal(typeof cat.sort, "number");
 });
+
+test("a push carrying epoch-millis dates is accepted", async () => {
+  const a = await newUser("A");
+  const family = await spaces.create(a, "Family", "NGN");
+  const catId = (await sync.pull(a, 0)).changes.categories!.created
+    .find((c) => c.space_id === family.id)!.id as string;
+
+  const occurredMs = Date.parse("2026-08-18T09:00:00Z");
+
+  // This is exactly what WatermelonDB sends: numbers, not Date objects.
+  // Postgres cannot parse a bare number as timestamptz, so before the push
+  // side coerced them, every save on device failed to sync.
+  await sync.push(a, {
+    transactions: {
+      created: [{
+        id: randomUUID(), space_id: family.id, category_id: catId, created_by: a,
+        kind: "expense", amount_minor: 1500, currency: "NGN",
+        rate_to_base: 1, base_minor: 1500, note: "Snack",
+        occurred_at: occurredMs,
+        created_at: occurredMs,
+        updated_at: occurredMs,
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0);
+
+  const txn = (await sync.pull(a, 0)).changes.transactions!.created
+    .find((t) => t.amount_minor === 1500);
+
+  assert.ok(txn, "a push with millis dates never landed");
+  assert.equal(txn!.occurred_at, occurredMs, "the date round-tripped incorrectly");
+});
+
+test("a recurring rule round-trips its millis dates", async () => {
+  const a = await newUser("A");
+  const family = await spaces.create(a, "Family", "NGN");
+  const catId = (await sync.pull(a, 0)).changes.categories!.created
+    .find((c) => c.space_id === family.id)!.id as string;
+
+  const startOn = Date.parse("2026-08-01T00:00:00Z");
+  const nextRunAt = Date.parse("2026-08-25T00:00:00Z");
+
+  await sync.push(a, {
+    recurring_rules: {
+      created: [{
+        id: randomUUID(), space_id: family.id, category_id: catId,
+        kind: "income", label: "Salary", amount_minor: 45_000_000, currency: "NGN",
+        freq: "monthly", day_of_month: 25, weekday: null, interval: 1,
+        start_on: startOn, end_on: null, auto_post: false,
+        next_run_at: nextRunAt, last_run_at: null, active: true,
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0);
+
+  const rule = (await sync.pull(a, 0)).changes.recurring_rules!.created[0]!;
+  assert.equal(rule.start_on, startOn);
+  assert.equal(rule.next_run_at, nextRunAt);
+  assert.equal(rule.auto_post, false);
+  assert.equal(rule.day_of_month, 25);
+  assert.equal(rule.last_run_at, null);
+});
