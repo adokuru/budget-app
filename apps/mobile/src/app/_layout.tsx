@@ -13,6 +13,7 @@ import { SpaceProvider } from "@/state/space";
 import { PrefsProvider } from "@/state/prefs";
 import { syncQuietly } from "@/lib/sync";
 import { color } from "@/theme/tokens";
+import { TrackingBridge } from "@/components/tracking-bridge";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -86,6 +87,28 @@ function Gate() {
               headerStyle: { backgroundColor: color.canvas },
             }}
           />
+          <Stack.Screen
+            name="reminders"
+            options={{
+              headerShown: true,
+              title: "Reminders",
+              headerShadowVisible: false,
+              headerBackButtonDisplayMode: "minimal",
+              headerTintColor: color.ink,
+              headerStyle: { backgroundColor: color.canvas },
+            }}
+          />
+          <Stack.Screen
+            name="widgets"
+            options={{
+              headerShown: true,
+              title: "Widgets",
+              headerShadowVisible: false,
+              headerBackButtonDisplayMode: "minimal",
+              headerTintColor: color.ink,
+              headerStyle: { backgroundColor: color.canvas },
+            }}
+          />
           {/*
             Sheets are routes, not components: native presentation, native
             detents, native dismiss gesture. No sheet library in the app.
@@ -104,5 +127,10 @@ function Gate() {
 
 /** The space context needs a signed-in user; the auth screens must not have it. */
 function Body({ signedIn, children }: { signedIn: boolean; children: React.ReactNode }) {
-  return signedIn ? <SpaceProvider>{children}</SpaceProvider> : <>{children}</>;
+  return signedIn ? (
+    <SpaceProvider>
+      <TrackingBridge />
+      {children}
+    </SpaceProvider>
+  ) : <>{children}</>;
 }

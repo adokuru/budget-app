@@ -10,7 +10,8 @@
     "ios": {
       "bundleIdentifier": "com.davidadokuru.kobo",
       "supportsTablet": false,
-      "icon": "./assets/images/icon.png"
+      "icon": "./assets/images/icon.png",
+      "appleTeamId": "25966HW4KV"
     },
     "android": {
       "adaptiveIcon": {
@@ -30,7 +31,33 @@
           "imageWidth": 120
         }
       ],
-      "expo-widgets",
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "com.davidadokuru.kobo.widgets",
+          "groupIdentifier": "group.com.davidadokuru.kobo",
+          "widgets": [
+            {
+              "name": "BudgetProgress",
+              "displayName": "Budget Progress",
+              "description": "See what you have spent and what is left this month.",
+              "supportedFamilies": [
+                "systemSmall",
+                "systemMedium"
+              ],
+              "contentMarginsDisabled": false,
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium"
+                ],
+                "contentMarginsDisabled": false
+              }
+            }
+          ]
+        }
+      ],
+      "expo-notifications",
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

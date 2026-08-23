@@ -6,6 +6,7 @@ import { usePrefs } from "@/state/prefs";
 import { AppHeader } from "@/components/app-header";
 import { Rule, Label, StatStrip } from "@/components/primitives";
 import { SettingsNavRow, SettingsToggleRow } from "@/components/settings-row";
+import { formatReminderTime } from "@/lib/reminders";
 import { color, space, GUTTER, type, DISPLAY_FONT } from "@/theme/tokens";
 
 export default function SettingsScreen() {
@@ -74,6 +75,20 @@ export default function SettingsScreen() {
 
       {/* ── Preferences ── */}
       <Label>Preferences</Label>
+      <SettingsNavRow
+        label="Notifications"
+        sub={prefs.dailyReminderEnabled || prefs.recurringReminderEnabled
+          ? `On · ${formatReminderTime(prefs.reminderHour, prefs.reminderMinute)}`
+          : "Off"}
+        href="/reminders"
+      />
+      <Rule />
+      <SettingsNavRow
+        label="Widgets"
+        sub="Track this month's budget from the Home Screen"
+        href="/widgets"
+      />
+      <Rule />
       <SettingsToggleRow
         label="Haptics"
         sub="Taps and confirmations give a small nudge."
