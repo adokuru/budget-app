@@ -1,7 +1,7 @@
 import { Text, View, type ViewStyle } from "react-native";
 import Animated, { cubicBezier } from "react-native-reanimated";
 import { useReducedMotion } from "@/lib/motion";
-import { color, space, GUTTER, radius, type, CONTINUOUS } from "@/theme/tokens";
+import { color, space, GUTTER, radius, shadow, type, CONTINUOUS } from "@/theme/tokens";
 
 const EASE_IN_OUT = cubicBezier(0.77, 0, 0.175, 1);
 
@@ -54,10 +54,12 @@ export function Thin({
   spent,
   budget,
   tone,
+  trackColor = color.hairline,
 }: {
   spent: number;
   budget: number;
   tone: string;
+  trackColor?: string;
 }) {
   const reduced = useReducedMotion();
   const pct = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
@@ -68,7 +70,7 @@ export function Thin({
       style={{
         height: 3,
         borderRadius: radius.pill,
-        backgroundColor: color.hairline,
+        backgroundColor: trackColor,
         overflow: "hidden",
       }}
     >
@@ -87,6 +89,35 @@ export function Thin({
           }),
         }}
       />
+    </View>
+  );
+}
+
+/** A restrained group surface; lists stay scannable without becoming card soup. */
+export function SectionCard({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: ViewStyle;
+}) {
+  return (
+    <View
+      style={[
+        {
+          marginHorizontal: GUTTER,
+          backgroundColor: color.surface,
+          borderRadius: radius.card,
+          borderWidth: 1,
+          borderColor: color.hairline,
+          overflow: "hidden",
+          ...CONTINUOUS,
+          ...shadow.card,
+        },
+        style,
+      ]}
+    >
+      {children}
     </View>
   );
 }

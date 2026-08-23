@@ -3,7 +3,8 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
-import { color, space, GUTTER, radius, type, DISPLAY_FONT } from "@/theme/tokens";
+import { Brand } from "@/components/logo";
+import { color, space, GUTTER, radius, shadow, type } from "@/theme/tokens";
 
 /**
  * The wordmark, a space chip, and a bell. Sits above the native large-title
@@ -26,9 +27,7 @@ export function AppHeader({
         paddingVertical: space.md,
       }}
     >
-      <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 17, color: color.ink }}>
-        Kobo<Text style={{ color: color.accent }}>Tracker</Text>
-      </Text>
+      <Brand markSize={32} wordSize={17} />
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
         <Pressable
@@ -40,10 +39,13 @@ export function AppHeader({
             flexDirection: "row",
             alignItems: "center",
             gap: space.xs,
-            backgroundColor: color.chipAlt,
+            backgroundColor: color.surface,
             borderRadius: radius.pill,
+            borderWidth: 1,
+            borderColor: color.hairline,
             paddingHorizontal: 10,
             paddingVertical: 6,
+            ...shadow.card,
           }}
         >
           <Text style={{ fontSize: 12 }}>{isShared ? "👨‍👩‍👧" : "👤"}</Text>

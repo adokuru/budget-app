@@ -4,13 +4,13 @@
     "slug": "kobo-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/kobo-mark.png",
     "scheme": "kobo",
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.davidadokuru.kobo",
       "supportsTablet": false,
-      "icon": "./assets/images/icon.png",
+      "icon": "./assets/kobo-tracker.icon",
       "appleTeamId": "25966HW4KV"
     },
     "android": {
@@ -26,9 +26,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FAFAF8",
-          "image": "./assets/images/icon.png",
-          "imageWidth": 120
+          "backgroundColor": "#F6F7F3",
+          "image": "./assets/images/kobo-mark.png",
+          "imageWidth": 104
         }
       ],
       [

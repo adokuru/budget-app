@@ -1,27 +1,31 @@
 import type { TextStyle } from "react-native";
 
 /**
- * Ported from the Figma design. Editorial and light: white ground, hairline
- * rules instead of cards, colour reserved for meaning (a category, a state)
- * rather than decoration.
+ * Kobo Tracker's modern-ledger palette: quiet paper, crisp white surfaces,
+ * cobalt for navigation, lime for brand moments, and green only for money in.
  */
 
 export const color = {
-  canvas: "#FFFFFF",
+  canvas: "#F6F7F3",
+  surface: "#FFFFFF",
+  surfaceStrong: "#111A3A",
   /** Inset chips, numpad keys, avatars behind emoji. */
-  chip: "#F5F5F3",
-  chipAlt: "#F2F2F0",
-  pressed: "#F7F7F5",
+  chip: "#F0F1EC",
+  chipAlt: "#ECEEF8",
+  pressed: "#F1F2EE",
 
-  ink: "#111114",
-  body: "#555553",
-  faint: "#AAAAAA",
-  fainter: "#CCCCCA",
+  ink: "#11162A",
+  body: "#555A68",
+  faint: "#8A8F9E",
+  fainter: "#B9BDC7",
 
-  hairline: "#EFEFED",
-  border: "#E0E0DE",
+  hairline: "#E8EAE4",
+  border: "#DADDD5",
 
-  accent: "#00A860",
+  accent: "#3157F5",
+  accentDeep: "#213CAD",
+  brandLime: "#D8FF3E",
+  positive: "#00A860",
   onAccent: "#FFFFFF",
   danger: "#E5383B",
   warning: "#F59E0B",
@@ -60,14 +64,15 @@ export const space = {
 export const GUTTER = 20;
 
 export const radius = {
-  sheet: 24, card: 12, chip: 10, pill: 999,
+  sheet: 24, card: 18, chip: 12, pill: 999,
 } as const;
 
 /** Apple's squircle. Every rounded corner that is not a capsule gets it. */
 export const CONTINUOUS = { borderCurve: "continuous" } as const;
 
 export const shadow = {
-  fab: { boxShadow: "0 4px 16px rgba(0, 168, 96, 0.45)" },
+  fab: { boxShadow: "0 6px 18px rgba(49, 87, 245, 0.34)" },
+  card: { boxShadow: "0 2px 10px rgba(17, 22, 42, 0.05)" },
   sheet: { boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.12)" },
 } as const;
 
