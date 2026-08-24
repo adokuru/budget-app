@@ -48,10 +48,10 @@ export default function SignUpScreen() {
       >
         <Brand markSize={42} wordSize={22} />
         <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 30, lineHeight: 36, color: color.ink, marginTop: space.base }}>
-          Start with a clear month.
+          Create your account.
         </Text>
         <Text style={{ ...type.body, color: color.body, marginBottom: space.md }}>
-          Create your private budget first. Invite family when you are ready.
+          Start with your own budget. Invite family when you are ready.
         </Text>
 
         <Field label="Name" value={name} onChange={setName} autoComplete="name" />
@@ -61,7 +61,7 @@ export default function SignUpScreen() {
                secureTextEntry autoComplete="new-password" onSubmit={submit} />
 
         <Text style={{ ...type.rowSub, color: tooShort ? color.danger : color.faint, lineHeight: 17 }}>
-          Use at least 10 characters. A short phrase is easiest to remember.
+          Use 10 or more characters. A short phrase works well.
         </Text>
 
         {error && (

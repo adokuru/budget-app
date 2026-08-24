@@ -65,7 +65,7 @@ export default function RemindersScreen() {
         <View style={rowStyle}>
           <View style={{ flex: 1 }}>
             <Text style={{ ...type.rowTitleLg, color: color.ink }}>Notifications</Text>
-            <Text style={type.rowSub}>{permission ? "Allowed on this device" : "Not allowed yet"}</Text>
+            <Text style={type.rowSub}>{permission ? "Allowed on this phone" : "Not allowed on this phone"}</Text>
           </View>
           {!permission && (
             <Pressable onPress={() => void Linking.openSettings()} hitSlop={10}>
@@ -79,14 +79,14 @@ export default function RemindersScreen() {
       <SectionCard>
         <SettingsToggleRow
           label="Daily check-in"
-          sub="An evening nudge to add anything you spent today."
+          sub="Remind me to add what I spent today."
           value={prefs.dailyReminderEnabled}
           onChange={(value) => value ? void enable(prefs.setDailyReminderEnabled) : prefs.setDailyReminderEnabled(false)}
         />
         <Rule full />
         <SettingsToggleRow
           label="Recurring items"
-          sub="A heads-up before rent, subscriptions, salary and other scheduled items."
+          sub="Remind me before recurring income and bills are due."
           value={prefs.recurringReminderEnabled}
           onChange={(value) => value ? void enable(prefs.setRecurringReminderEnabled) : prefs.setRecurringReminderEnabled(false)}
         />
@@ -99,7 +99,7 @@ export default function RemindersScreen() {
             <View style={rowStyle}>
               <View style={{ flex: 1 }}>
                 <Text style={{ ...type.rowTitleLg, color: color.ink }}>Reminder time</Text>
-                <Text style={type.rowSub}>Uses this device&apos;s local time.</Text>
+                <Text style={type.rowSub}>Uses your phone&apos;s local time.</Text>
               </View>
               {Platform.OS === "ios" ? timePicker : (
                 <Pressable
@@ -122,8 +122,8 @@ export default function RemindersScreen() {
           <Rule />
           <View style={{ ...rowStyle, alignItems: "flex-start" }}>
             <View style={{ flex: 1, paddingTop: 8 }}>
-              <Text style={{ ...type.rowTitleLg, color: color.ink }}>Remind me</Text>
-              <Text style={type.rowSub}>Before each recurring item is due.</Text>
+              <Text style={{ ...type.rowTitleLg, color: color.ink }}>Reminder date</Text>
+              <Text style={type.rowSub}>Choose how early to be reminded.</Text>
             </View>
             <View style={{ flexDirection: "row", gap: space.sm }}>
               {[0, 1, 3].map((days) => {
@@ -138,7 +138,7 @@ export default function RemindersScreen() {
                     }}
                   >
                     <Text style={{ fontSize: 12, fontWeight: "700", color: selected ? color.onStrong : color.body }}>
-                      {days === 0 ? "Due" : `${days}d`}
+                      {days === 0 ? "Today" : `${days} ${days === 1 ? "day" : "days"}`}
                     </Text>
                   </Pressable>
                 );
@@ -154,7 +154,7 @@ export default function RemindersScreen() {
           onPress={() => void scheduleTestReminder().then((sent) => {
             setPermission(sent);
             show(
-              sent ? "Test reminder scheduled for five seconds" : "Notifications are off",
+              sent ? "Test reminder will arrive in 5 seconds" : "Notifications are off",
               { tone: sent ? "success" : "error" }
             );
           })}

@@ -5,7 +5,7 @@ import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
 import {
-  applyKey, toMinor, describeRecurrence, nextOccurrence, ordinal, utcDay,
+  applyKey, toMinor, describeRecurrence, nextOccurrence, utcDay,
   type AmountKey, type CategoryKind, type Freq,
 } from "@budget/shared";
 import { database } from "@/db";
@@ -23,7 +23,7 @@ import { space, radius, CONTINUOUS } from "@/theme/tokens";
 const FREQS: { key: Freq; label: string }[] = [
   { key: "monthly", label: "Monthly" },
   { key: "weekly", label: "Weekly" },
-  { key: "biweekly", label: "2 weeks" },
+  { key: "biweekly", label: "Every 2 weeks" },
   { key: "yearly", label: "Yearly" },
 ];
 
@@ -117,7 +117,7 @@ export default function RecurringRuleSheet() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Text style={{ ...type.body, color: color.faint }}>Cancel</Text>
         </Pressable>
-        <Text style={{ ...type.body, fontWeight: "600", color: color.ink }}>Recurring</Text>
+        <Text style={{ ...type.body, fontWeight: "600", color: color.ink }}>New recurring item</Text>
         <Pressable onPress={save} disabled={!canSave} hitSlop={12}>
           <Text style={{ ...type.body, fontWeight: "600", color: canSave ? color.accent : color.hairline }}>
             Save
@@ -139,7 +139,7 @@ export default function RecurringRuleSheet() {
         </View>
 
         <Segmented
-          options={[{ key: "expense", label: "Spend" }, { key: "income", label: "Income" }]}
+          options={[{ key: "expense", label: "Expense" }, { key: "income", label: "Income" }]}
           value={kind}
           onChange={(k) => { setKind(k as CategoryKind); setCategoryId(null); }}
         />
@@ -173,11 +173,11 @@ export default function RecurringRuleSheet() {
           }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ ...type.body, color: color.ink }}>Post automatically</Text>
+            <Text style={{ ...type.body, color: color.ink }}>Add automatically</Text>
             <Text style={{ ...type.rowSub, color: color.faint }}>
               {autoPost
-                ? "Added on the date without asking. Good for rent and subscriptions."
-                : "Asks you to confirm it landed. Better for salary, which can be late."}
+                ? "Add this item on its due date without asking."
+                : "Ask before adding this item."}
             </Text>
           </View>
           <Switch
@@ -255,7 +255,7 @@ function DayGrid({ value, onChange }: { value: number; onChange: (d: number) => 
       </View>
       {value > 28 && (
         <Text style={{ ...type.rowSub, color: color.faint }}>
-          Months without a {ordinal(value)} use their last day.
+          For shorter months, this runs on the last day.
         </Text>
       )}
     </View>

@@ -64,7 +64,7 @@ export default function SignInScreen() {
 
     const idToken = googleResponse.params.id_token ?? googleResponse.authentication?.idToken;
     if (!idToken) {
-      setError("Google did not return an identity token.");
+      setError("Google sign-in could not be completed. Try again.");
       setBusy(null);
       return;
     }
@@ -111,7 +111,7 @@ export default function SignInScreen() {
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-      if (!credential.identityToken) throw new Error("Apple did not return a token");
+      if (!credential.identityToken) throw new Error("Apple sign-in could not be completed. Try again.");
       // Apple sends the name only on first authorization, so forward it now
       // or lose it forever.
       const name = [credential.fullName?.givenName, credential.fullName?.familyName]
@@ -128,7 +128,7 @@ export default function SignInScreen() {
 
   async function withGoogle() {
     if (!activeGoogleClientId) {
-      setError("Google sign-in is not configured for this build yet.");
+      setError("Google sign-in is unavailable in this version of the app.");
       return;
     }
     setBusy("google");
@@ -150,10 +150,10 @@ export default function SignInScreen() {
       >
         <Brand markSize={42} wordSize={22} />
         <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 30, lineHeight: 36, color: color.ink, marginTop: space.base }}>
-          Know what is left.
+          Welcome back.
         </Text>
         <Text style={{ ...type.body, color: color.body, marginBottom: space.md }}>
-          Every naira accounted for. Plan every bill and see what is safe to spend this month.
+          Sign in to check your budget and add today&apos;s spending.
         </Text>
 
         <Field label="Email" value={email} onChange={setEmail}
@@ -184,7 +184,7 @@ export default function SignInScreen() {
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginVertical: space.xs }}>
           <View style={{ flex: 1, height: 1, backgroundColor: color.hairline }} />
-          <Text style={type.meta}>or continue with</Text>
+          <Text style={type.meta}>or sign in with</Text>
           <View style={{ flex: 1, height: 1, backgroundColor: color.hairline }} />
         </View>
 
@@ -224,7 +224,7 @@ export default function SignInScreen() {
 
         <Link href="/(auth)/sign-up" asChild>
           <Pressable style={{ alignItems: "center", paddingVertical: space.base }}>
-            <Text style={type.action}>New to Kobo Tracker? Create an account</Text>
+            <Text style={type.action}>Don&apos;t have an account? Create one</Text>
           </Pressable>
         </Link>
       </ScrollView>

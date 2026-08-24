@@ -68,8 +68,8 @@ export async function syncReminders(rules: RecurringRule[], prefs: ReminderPrefs
   if (prefs.dailyReminderEnabled) {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: "Quick money check-in",
-        body: "Add anything you spent today while it is still fresh.",
+        title: "Any spending to add?",
+        body: "Add today's spending while you still remember it.",
         sound: "default",
         data: { koboManaged: true, href: "/" },
       },
@@ -107,7 +107,7 @@ export async function syncReminders(rules: RecurringRule[], prefs: ReminderPrefs
       await Notifications.scheduleNotificationAsync({
         content: {
           title: `${rule.label} is due ${when}`,
-          body: "Open Kobo Tracker to review it.",
+          body: "Open Kobo Tracker to check it.",
           sound: "default",
           data: { koboManaged: true, href: "/recurring" },
         },
@@ -125,8 +125,8 @@ export async function scheduleTestReminder() {
   if (!(await ensureReminderPermission())) return false;
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "Kobo Tracker reminders are on",
-      body: "You will get a nudge at the time you chose.",
+      title: "Reminders are on",
+      body: "Kobo Tracker will remind you at the time you chose.",
       sound: "default",
       data: { href: "/reminders" },
     },

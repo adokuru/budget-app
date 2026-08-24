@@ -83,7 +83,10 @@ export class AuthService {
               (this.config.get<string>("GOOGLE_CLIENT_IDS") ?? "").split(",").filter(Boolean)
             );
     } catch (e) {
-      if (e instanceof OAuthVerificationError) throw new UnauthorizedException(e.message);
+      if (e instanceof OAuthVerificationError) {
+        const name = provider === "apple" ? "Apple" : "Google";
+        throw new UnauthorizedException(`${name} sign-in could not be verified. Try again.`);
+      }
       throw e;
     }
 

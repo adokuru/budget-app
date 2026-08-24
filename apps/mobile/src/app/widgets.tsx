@@ -26,8 +26,8 @@ export default function WidgetsScreen() {
         >
           <View style={{ gap: space.xs }}>
             <Text style={{ ...type.eyebrow, color: color.accent }}>Monthly budget</Text>
-            <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 24, color: color.ink }}>What&apos;s left</Text>
-            <Text style={type.rowSub}>Spent, remaining and monthly progress at a glance.</Text>
+            <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 24, color: color.ink }}>Budget left</Text>
+            <Text style={type.rowSub}>See your spending, remaining budget and monthly progress.</Text>
           </View>
           <View style={{ height: 6, borderRadius: 3, backgroundColor: color.border, overflow: "hidden" }}>
             <View style={{ width: "62%", height: "100%", backgroundColor: color.accent }} />

@@ -65,8 +65,8 @@ export default function SettingsScreen() {
           bordered
           items={[
             { label: "Space", value: <Val>{current.name}</Val> },
-            { label: "Reports in", value: <Val>{baseCurrency}</Val> },
-            { label: "Showing", value: <Val>{displayCurrency}</Val> },
+            { label: "Base currency", value: <Val>{baseCurrency}</Val> },
+            { label: "Shown in", value: <Val>{displayCurrency}</Val> },
           ]}
         />
       </SectionCard>
@@ -98,27 +98,27 @@ export default function SettingsScreen() {
         <Rule full />
         <SettingsNavRow
           label="Widgets"
-          sub="Track this month's budget from the Home Screen"
+          sub="See this month's budget on your Home Screen"
           href="/widgets"
         />
         <Rule full />
         <SettingsToggleRow
-          label="Haptics"
-          sub="Taps and confirmations give a small nudge."
+          label="Tap feedback"
+          sub="Vibrate when you tap or save."
           value={prefs.haptics}
           onChange={prefs.setHaptics}
         />
         <Rule full />
         <SettingsToggleRow
-          label="Confirm income by default"
-          sub="New income asks whether it landed instead of posting itself."
+          label="Confirm new income"
+          sub="Ask before adding new recurring income."
           value={prefs.confirmIncome}
           onChange={prefs.setConfirmIncome}
         />
         <Rule full />
         <SettingsToggleRow
           label="Sync on app open"
-          sub="Off means changes only travel when you pull to refresh."
+          sub="When off, pull down to sync changes."
           value={prefs.autoSync}
           onChange={prefs.setAutoSync}
         />
@@ -155,7 +155,7 @@ export default function SettingsScreen() {
         </View>
       </SectionCard>
       <Text style={{ ...type.rowSub, paddingHorizontal: GUTTER, paddingTop: space.sm }}>
-        System follows this device. Your choice stays on this phone.
+        System uses your phone&apos;s appearance. This setting only applies to this phone.
       </Text>
 
       {/* ── Planning ── */}
@@ -169,7 +169,7 @@ export default function SettingsScreen() {
       <AccountSection />
 
       <Text style={{ textAlign: "center", paddingVertical: space.xl, fontSize: 11, color: color.fainter }}>
-        KoboTracker v1.0.0 · Made in Lagos 🇳🇬
+        Kobo Tracker v1.0.0 · Made in Lagos 🇳🇬
       </Text>
     </ScrollView>
   );
@@ -181,7 +181,7 @@ function AccountSection() {
 
   const confirmDelete = () => {
     Alert.alert(
-      "Delete your account?",
+      "Delete account?",
       "This removes your account and personal data permanently. Shared spaces you do not own stay with their other members. This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },

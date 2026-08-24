@@ -64,10 +64,10 @@ export default function WelcomeScreen() {
               letterSpacing: -1.2, color: color.ink,
             }}
           >
-            See what is left before you spend it.
+            Know what you can spend this month.
           </Text>
           <Text style={{ ...type.body, color: color.body, fontSize: 15, lineHeight: 22, marginTop: space.md }}>
-            Plan income, bills, everyday spending and family money in one calm monthly view.
+            Add your income and bills. Kobo Tracker shows what is left for everyday spending, on your own or with family.
           </Text>
         </View>
 
@@ -137,7 +137,7 @@ export default function WelcomeScreen() {
             <Text style={{ ...type.body, fontWeight: "700", color: color.ink }}>I already have an account</Text>
           </Pressable>
           <Text style={{ ...type.rowSub, textAlign: "center", color: color.faint }}>
-            Private by default · No bank connection required
+            Your budget starts private. No bank connection needed.
           </Text>
       </View>
     </SafeAreaView>

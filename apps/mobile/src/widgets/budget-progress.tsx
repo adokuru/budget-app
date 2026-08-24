@@ -46,7 +46,7 @@ export const BudgetProgressWidget = createWidget<BudgetWidgetProps>(
           {props.hasBudget ? props.remaining : "No budget set"}
         </Text>
         <Text modifiers={[font({ size: 11 }), foregroundStyle(faint)]}>
-          {props.hasBudget ? "left this month" : "Tap to add one"}
+          {props.hasBudget ? "left this month" : "Open to set one"}
         </Text>
         <Spacer />
         <ProgressView

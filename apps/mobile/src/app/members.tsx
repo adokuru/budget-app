@@ -53,7 +53,7 @@ export default function MembersSheet() {
     // Destructive and not reversible from here, so it asks first.
     Alert.alert(
       `Remove ${member.name}?`,
-      `They lose access to ${current.name}, and this space's data is deleted from their device on their next sync.`,
+      `They will lose access to ${current.name}. You can invite them again later.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -112,7 +112,7 @@ export default function MembersSheet() {
                 <Text style={{ ...type.body, color: color.ink }}>
                   {m.name}{m.id === user?.id ? " (you)" : ""}
                 </Text>
-                <Text style={{ ...type.rowSub, color: color.faint }}>{m.role}</Text>
+                <Text style={{ ...type.rowSub, color: color.faint, textTransform: "capitalize" }}>{m.role}</Text>
               </View>
 
               {isOwner && m.id !== user?.id && (
@@ -140,7 +140,7 @@ export default function MembersSheet() {
           </Text>
           <Pressable
             onPress={() =>
-              Share.share({ message: `Join ${current.name} on Kobo Tracker with the code ${code}` })
+              Share.share({ message: `Use code ${code} to join ${current.name} on Kobo Tracker.` })
             }
             style={{
               flexDirection: "row", alignItems: "center", gap: 6,

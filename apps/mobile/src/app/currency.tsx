@@ -64,21 +64,20 @@ export default function CurrencyScreen() {
         })}
       </View>
       <Text style={{ ...type.rowSub, paddingHorizontal: GUTTER, paddingBottom: space.base, lineHeight: 16 }}>
-        Changes what amounts are shown in. Your stored history keeps the rate each
-        entry was made at, so past months never re-price.
+        Only the display changes. Past entries keep the exchange rate used when you added them.
       </Text>
 
       <SectionCard>
         <SettingsToggleRow
           label="Hide decimals"
-          sub="Whole naira only. Kobo rarely matters."
+          sub="Show whole amounts only."
           value={prefs.hideDecimals}
           onChange={prefs.setHideDecimals}
         />
         <Rule full />
         <SettingsToggleRow
           label="Show base currency too"
-          sub={`Adds ${baseCurrency}, this space's reporting currency, under converted amounts.`}
+          sub={`Also show amounts in ${baseCurrency}, this space's main currency.`}
           value={prefs.showBaseCurrency}
           onChange={prefs.setShowBaseCurrency}
         />
@@ -102,8 +101,7 @@ export default function CurrencyScreen() {
         ))}
       </SectionCard>
       <Text style={{ ...type.rowSub, paddingHorizontal: GUTTER, paddingVertical: space.md, lineHeight: 16 }}>
-        Auto rates as of {asOf}. Type your own if the rate you actually get
-        differs — yours wins everywhere.
+        Automatic rates updated {asOf}. Enter your own rate to use it instead.
       </Text>
 
       <Label>Tools</Label>

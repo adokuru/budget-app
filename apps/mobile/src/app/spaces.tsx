@@ -56,7 +56,7 @@ export default function SpacesSheet() {
       router.back();
     } catch (e) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setError(e instanceof Error ? e.message : "That did not work");
+      setError(e instanceof Error ? e.message : "Could not update your spaces");
     } finally {
       setBusy(false);
     }
@@ -95,7 +95,7 @@ export default function SpacesSheet() {
               />
               <View style={{ flex: 1 }}>
                 <Text style={{ ...type.body, color: color.ink }}>{s.name}</Text>
-                <Text style={{ ...type.rowSub, color: color.faint }}>
+                <Text style={{ ...type.rowSub, color: color.faint, textTransform: "capitalize" }}>
                   {s.baseCurrency} · {s.role}
                 </Text>
               </View>
@@ -119,7 +119,7 @@ export default function SpacesSheet() {
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Family"
+            placeholder="Space name, e.g. Family"
             placeholderTextColor={color.fainter}
             style={inputStyle}
           />

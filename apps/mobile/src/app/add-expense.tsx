@@ -224,7 +224,7 @@ export default function AddEntrySheet() {
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder="Note…"
+          placeholder="Add a note (optional)"
           placeholderTextColor={color.fainter}
           style={{
             fontSize: 13, color: color.ink,

@@ -55,7 +55,7 @@ export default function RecurringScreen() {
     );
     await confirmPending(p, baseCurrency, rates, landed);
     await refresh();
-    show(landed ? "Marked as received" : "Left pending", {
+    show(landed ? "Marked as received" : "Still waiting for it", {
       tone: landed ? "success" : "info",
     });
   }
@@ -73,7 +73,7 @@ export default function RecurringScreen() {
       <AppHeader spaceName={current.name} isShared={isShared} />
 
       <SectionCard style={{ marginTop: space.sm, padding: space.lg }}>
-        <Text style={{ ...type.eyebrow, marginBottom: space.sm }}>Monthly commitments</Text>
+        <Text style={{ ...type.eyebrow, marginBottom: space.sm }}>Monthly bills</Text>
         <Amt minor={toDisplay(commitment)} currency={displayCurrency} size="xl" />
         <Text style={{ ...type.meta, marginTop: space.sm }}>
           {outgoings.length} {outgoings.length === 1 ? "payment" : "payments"} scheduled
@@ -83,7 +83,7 @@ export default function RecurringScreen() {
       {/* Anything due that needs a yes or no gets asked first. */}
       {pending.length > 0 && (
         <>
-          <Label>Confirm</Label>
+          <Label>Needs confirmation</Label>
           <SectionCard>
             {pending.map((p, i) => (
               <View key={`${p.rule.id}-${p.occurredAt}`}>
@@ -114,7 +114,7 @@ export default function RecurringScreen() {
                         alignItems: "center", backgroundColor: color.positive,
                       }}
                     >
-                      <Text style={{ ...type.body, fontWeight: "700", color: color.onPositive }}>Landed</Text>
+                      <Text style={{ ...type.body, fontWeight: "700", color: color.onPositive }}>Received</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => answer(p, false)}
@@ -139,7 +139,7 @@ export default function RecurringScreen() {
           <EmptyState
             symbol="🔁"
             title="No recurring items"
-            body="Add your salary on the 25th, rent on the 1st, and your subscriptions. Salary defaults to asking whether it landed, because it can be late."
+            body="Add regular income and bills, such as salary, rent and subscriptions. For income, Kobo Tracker can ask you before adding it."
             action={{ label: "Add one", href: "/recurring-rule" }}
           />
         </SectionCard>
@@ -194,13 +194,13 @@ export default function RecurringScreen() {
                 paddingHorizontal: GUTTER, paddingVertical: space.lg,
               }}
             >
-              <Text style={type.meta}>After all commitments</Text>
+              <Text style={type.meta}>Expected after bills</Text>
               <Text style={{ ...type.body, fontWeight: "700", color: color.positive }}>
                 {formatWhole(
                   toDisplay(sumMinor(incomes.map((r) => r.amountMinor)) - commitment),
                   displayCurrency
                 )}{" "}
-                free
+                left
               </Text>
             </View>
           </SectionCard>
@@ -231,7 +231,7 @@ function RuleRow({
             freq: rule.freq, dayOfMonth: rule.dayOfMonth, weekday: rule.weekday,
             interval: rule.interval, startOn: rule.startOn.getTime(),
           })}
-          {rule.autoPost ? "" : " · confirms"}
+          {rule.autoPost ? "" : " · asks first"}
         </Text>
       </View>
       <View style={{ alignItems: "flex-end" }}>

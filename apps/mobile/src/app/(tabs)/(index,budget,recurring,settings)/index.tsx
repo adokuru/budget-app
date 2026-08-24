@@ -124,7 +124,7 @@ function HomeScreen() {
       >
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ ...type.eyebrow, color: "#FFFFFFA6" }}>
-            {budgeted > 0 ? "Left to spend" : "Net this month"} · {monthLabel()}
+            {budgeted > 0 ? "Left to spend" : "Available this month"} · {monthLabel()}
           </Text>
           {ceiling > 0 && (
             <View
@@ -158,7 +158,7 @@ function HomeScreen() {
           items={[
             { label: "Income", value: <AmtShort minor={toDisplay(income)} currency={displayCurrency} tone={color.positive} size={15} /> },
             { label: "Spent", value: <AmtShort minor={toDisplay(spent)} currency={displayCurrency} size={15} /> },
-            { label: "Projected", value: <AmtShort minor={toDisplay(projected)} currency={displayCurrency} size={15} tone={projected < 0 ? color.danger : color.ink} /> },
+            { label: "Expected left", value: <AmtShort minor={toDisplay(projected)} currency={displayCurrency} size={15} tone={projected < 0 ? color.danger : color.ink} /> },
           ]}
         />
       </SectionCard>
@@ -166,7 +166,7 @@ function HomeScreen() {
       {/* ── Salary confirmation ── */}
       {pendingIncome.length > 0 && (
         <>
-          <Label>Income check-in</Label>
+          <Label>Expected income</Label>
           <SectionCard>
             {pendingIncome.map((r, i) => (
               <View key={r.id}>
@@ -180,7 +180,7 @@ function HomeScreen() {
                   <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, flex: 1 }}>
                     <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color.warning }} />
                     <Text style={{ ...type.body, color: color.body }} numberOfLines={1}>
-                      {formatWhole(toDisplay(r.amountMinor), displayCurrency)} {r.label} expected
+                      {r.label} expected · {formatWhole(toDisplay(r.amountMinor), displayCurrency)}
                     </Text>
                   </View>
                   <Text style={{ ...type.action, color: color.warning }}>Review</Text>
@@ -198,7 +198,7 @@ function HomeScreen() {
           <EmptyState
             symbol="🧾"
             title="Nothing logged yet"
-            body="Tap + to log your first expense. Rent, salary and subscriptions live in Recurring."
+            body="Tap + to add your first expense or income. Add rent, salary and subscriptions under Recurring."
           />
         </SectionCard>
       ) : (

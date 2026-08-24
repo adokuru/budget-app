@@ -59,7 +59,7 @@ export async function api<T>(path: string, opts: Options = {}): Promise<T> {
   const parsed = text ? safeJson(text) : null;
 
   if (!res.ok) {
-    throw new ApiError(res.status, messageFrom(parsed) ?? `Request failed (${res.status})`, parsed);
+    throw new ApiError(res.status, messageFrom(parsed) ?? "Something went wrong. Try again.", parsed);
   }
   return parsed as T;
 }

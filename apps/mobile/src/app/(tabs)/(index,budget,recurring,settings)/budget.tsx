@@ -111,7 +111,7 @@ export default function BudgetScreen() {
           <EmptyState
             symbol="🎯"
             title="No budgets set"
-            body="Give a category a monthly limit — ₦200,000 for food, say — and this screen tracks you against it."
+            body="Set a monthly spending limit for a category, such as ₦200,000 for food. Kobo Tracker will show what you have left."
             action={{ label: "Set a budget", href: "/budget-editor" }}
           />
         </SectionCard>

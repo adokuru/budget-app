@@ -81,11 +81,11 @@ export class WeakPasswordError extends Error {
  * toward Password1! and measurably weaken real passwords; NIST dropped them.
  */
 export function assertPasswordShape(plain: string): void {
-  if (typeof plain !== "string") throw new WeakPasswordError("password is required");
-  if (plain.length < 10) throw new WeakPasswordError("password must be at least 10 characters");
+  if (typeof plain !== "string") throw new WeakPasswordError("Enter a password.");
+  if (plain.length < 10) throw new WeakPasswordError("Use at least 10 characters.");
   // bcrypt's 72-byte trap does not apply to scrypt, but an unbounded password
   // is a cheap denial of service: every login would hash megabytes.
   if (Buffer.byteLength(plain, "utf8") > 1024) {
-    throw new WeakPasswordError("password must be under 1024 bytes");
+    throw new WeakPasswordError("That password is too long.");
   }
 }
