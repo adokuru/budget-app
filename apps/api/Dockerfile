@@ -23,5 +23,6 @@ COPY --from=build /prod/api /app
 COPY --from=build /repo/apps/api/drizzle /app/drizzle
 WORKDIR /app
 EXPOSE 3000
-# Render sets PORT; main.ts binds 0.0.0.0, which Render requires.
-CMD ["node", "dist/main.js"]
+# Migrate before accepting traffic. A failed migration leaves Render's previous
+# healthy instance serving instead of exposing a binary against an old schema.
+CMD ["sh", "-c", "node dist/db/migrate.js && exec node dist/main.js"]

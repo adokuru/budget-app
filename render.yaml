@@ -15,7 +15,6 @@ services:
     plan: starter            # NOT free: free instances spin down, which kills the
                              # daily recurring cron and cold-starts every first sync
     healthCheckPath: /health
-    preDeployCommand: node dist/db/migrate.js
     autoDeployTrigger: commit
     envVars:
       - key: DATABASE_URL
