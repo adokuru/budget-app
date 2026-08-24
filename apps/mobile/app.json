@@ -11,13 +11,18 @@
       "bundleIdentifier": "com.davidadokuru.kobo",
       "supportsTablet": false,
       "icon": "./assets/kobo-tracker.icon",
-      "appleTeamId": "25966HW4KV"
+      "appleTeamId": "25966HW4KV",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.davidadokuru.kobo",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/kobo-mark.png",
-        "backgroundColor": "#0C1222",
-        "monochromeImage": "./assets/images/kobo-mark.png"
+        "foregroundImage": "./assets/images/kobo-mark-android.png",
+        "backgroundColor": "#111A3A",
+        "monochromeImage": "./assets/images/kobo-mark-android.png"
       }
     },
     "plugins": [
@@ -31,6 +36,7 @@
           "imageWidth": 104
         }
       ],
+      "./plugins/with-widget-container-background",
       [
         "expo-widgets",
         {
@@ -63,6 +69,30 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "com.davidadokuru.kobo.widgets",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.davidadokuru.kobo"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "d9bf0288-15e0-434f-ad59-fe7f004e7714"
+      }
+    },
+    "owner": "davidghena"
   }
 }

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { Q } from "@nozbe/watermelondb";
-import { router } from "expo-router";
+import { router, useSegments } from "expo-router";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import {
@@ -13,15 +13,27 @@ import { useQuery } from "@/db/hooks";
 import { useSpace } from "@/state/space";
 import { Amt, AmtShort } from "@/components/amt";
 import { AppHeader } from "@/components/app-header";
-import { Rule, Label, Thin, Emoji, EmojiPlain, Row, StatStrip } from "@/components/primitives";
+import { Rule, Label, Thin, Emoji, EmojiPlain, Row, SectionCard, StatStrip } from "@/components/primitives";
 import { EmptyState } from "@/components/empty-state";
 import { Fab } from "@/components/fab";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { projectedRemaining } from "@/lib/recurring-engine";
 import { monthStart, monthEnd, formatRelativeDay } from "@/lib/period";
-import { color, space, GUTTER, type, CATEGORY_COLORS } from "@/theme/tokens";
+import { color, space, GUTTER, radius, type, CATEGORY_COLORS, CONTINUOUS } from "@/theme/tokens";
+import BudgetScreen from "./budget";
+import RecurringScreen from "./recurring";
+import SettingsScreen from "./settings";
 
-export default function HomeScreen() {
+export default function TabRootScreen() {
+  const group = useSegments().find((segment) => /^\((index|budget|recurring|settings)\)$/.test(segment));
+
+  if (group === "(budget)") return <BudgetScreen />;
+  if (group === "(recurring)") return <RecurringScreen />;
+  if (group === "(settings)") return <SettingsScreen />;
+  return <HomeScreen />;
+}
+
+function HomeScreen() {
   const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
   const since = useMemo(() => monthStart().getTime(), []);
 
@@ -92,6 +104,7 @@ export default function HomeScreen() {
     .slice(0, 4);
 
   const pendingIncome = rules.filter((r) => r.kind === "income" && !r.autoPost);
+  const topSpending = spending.slice(0, 4);
 
   return (
     <>
@@ -102,103 +115,135 @@ export default function HomeScreen() {
     >
       <AppHeader spaceName={current.name} isShared={isShared} />
 
-      {/* ── Balance ── */}
-      <View style={{ paddingHorizontal: GUTTER, paddingTop: space.base, paddingBottom: space.xl }}>
-        <Text style={{ ...type.eyebrow, marginBottom: space.sm }}>
-          {budgeted > 0 ? "Left to spend" : "Net this month"} · {monthLabel()}
-        </Text>
-        <Amt minor={toDisplay(left)} currency={displayCurrency} size="xl"
-             tone={left < 0 ? color.danger : color.ink} />
-        <Text style={{ ...type.meta, marginTop: space.sm }}>
+      <View
+        style={{
+          marginHorizontal: GUTTER, marginTop: space.sm, padding: space.lg,
+          backgroundColor: color.surfaceStrong, borderRadius: radius.card, ...CONTINUOUS,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ ...type.eyebrow, color: "#FFFFFFA6" }}>
+            {budgeted > 0 ? "Left to spend" : "Net this month"} · {monthLabel()}
+          </Text>
+          {ceiling > 0 && (
+            <View
+              style={{
+                paddingHorizontal: 9, paddingVertical: 5, borderRadius: radius.pill,
+                backgroundColor: left < 0 ? color.danger : color.brandLime,
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: "800", color: left < 0 ? color.onAccent : color.surfaceStrong }}>
+                {left < 0 ? "Over budget" : "On track"}
+              </Text>
+            </View>
+          )}
+        </View>
+        <View style={{ marginTop: space.sm }}>
+          <Amt minor={toDisplay(left)} currency={displayCurrency} size="xl"
+               tone={left < 0 ? color.danger : color.onAccent} />
+        </View>
+        <Text style={{ ...type.meta, color: "#FFFFFFA6", marginTop: space.sm }}>
           {ceiling > 0
             ? `of ${formatWhole(toDisplay(ceiling), displayCurrency)}${pct !== null ? ` · ${pct}% used` : ""}`
             : `${formatWhole(toDisplay(spent), displayCurrency)} spent · no budget set`}
         </Text>
-
-        {/* Budget health: green until it is not. */}
         <View style={{ marginTop: space.base }}>
-          <Thin spent={spent} budget={ceiling} tone={color.accent} />
+          <Thin spent={spent} budget={ceiling} tone={color.brandLime} trackColor="#FFFFFF2E" />
         </View>
       </View>
 
-      <Rule />
-
-      <StatStrip
-        items={[
-          { label: "Income", value: <AmtShort minor={toDisplay(income)} currency={displayCurrency} tone={color.accent} size={15} /> },
-          { label: "Spent", value: <AmtShort minor={toDisplay(spent)} currency={displayCurrency} size={15} /> },
-          { label: "Projected", value: <AmtShort minor={toDisplay(projected)} currency={displayCurrency} size={15} tone={projected < 0 ? color.danger : color.ink} /> },
-        ]}
-      />
-
-      <Rule />
+      <SectionCard style={{ marginTop: space.md }}>
+        <StatStrip
+          items={[
+            { label: "Income", value: <AmtShort minor={toDisplay(income)} currency={displayCurrency} tone={color.positive} size={15} /> },
+            { label: "Spent", value: <AmtShort minor={toDisplay(spent)} currency={displayCurrency} size={15} /> },
+            { label: "Projected", value: <AmtShort minor={toDisplay(projected)} currency={displayCurrency} size={15} tone={projected < 0 ? color.danger : color.ink} /> },
+          ]}
+        />
+      </SectionCard>
 
       {/* ── Salary confirmation ── */}
-      {pendingIncome.map((r) => (
-        <View key={r.id}>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); router.push("/(tabs)/(recurring)/recurring"); }}
-            style={{
-              flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-              paddingHorizontal: GUTTER, paddingVertical: space.base + 2,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color.warning }} />
-              <Text style={{ ...type.body, color: color.body }}>
-                {formatWhole(toDisplay(r.amountMinor), displayCurrency)} {r.label} expected
-              </Text>
-            </View>
-            <Text style={{ ...type.action, color: color.warning }}>Not yet</Text>
-          </Pressable>
-          <Rule />
-        </View>
-      ))}
+      {pendingIncome.length > 0 && (
+        <>
+          <Label>Income check-in</Label>
+          <SectionCard>
+            {pendingIncome.map((r, i) => (
+              <View key={r.id}>
+                <Pressable
+                  onPress={() => { Haptics.selectionAsync(); router.push("/(tabs)/(recurring)/recurring"); }}
+                  style={{
+                    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                    paddingHorizontal: space.base, paddingVertical: space.base + 2,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, flex: 1 }}>
+                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color.warning }} />
+                    <Text style={{ ...type.body, color: color.body }} numberOfLines={1}>
+                      {formatWhole(toDisplay(r.amountMinor), displayCurrency)} {r.label} expected
+                    </Text>
+                  </View>
+                  <Text style={{ ...type.action, color: color.warning }}>Review</Text>
+                </Pressable>
+                {i < pendingIncome.length - 1 && <Rule full />}
+              </View>
+            ))}
+          </SectionCard>
+        </>
+      )}
 
       {/* ── Spending ── */}
       {spending.length === 0 ? (
-        <View style={{ padding: GUTTER }}>
+        <SectionCard style={{ marginTop: space.lg }}>
           <EmptyState
             symbol="🧾"
             title="Nothing logged yet"
             body="Tap + to log your first expense. Rent, salary and subscriptions live in Recurring."
           />
-        </View>
+        </SectionCard>
       ) : (
         <>
-          <Label>Spending</Label>
-          {spending.map(({ category, spent: catSpent, limit }, i) => (
-            <View key={category.id}>
-              <Row>
-                <EmojiPlain glyph={category.emoji || FALLBACK_EMOJI} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <View
-                    style={{
-                      flexDirection: "row", alignItems: "baseline",
-                      justifyContent: "space-between", marginBottom: space.sm,
-                    }}
-                  >
-                    <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
-                      {category.name}
-                    </Text>
-                    <Text style={type.rowSub}>
-                      {limit
-                        ? `${formatWhole(toDisplay(limit - catSpent), displayCurrency)} left`
-                        : "no limit"}
-                    </Text>
+          <Label
+            action={spending.length > topSpending.length ? (
+              <Pressable onPress={() => router.push("/(tabs)/(budget)/budget")} hitSlop={10}>
+                <Text style={type.action}>View all</Text>
+              </Pressable>
+            ) : undefined}
+          >
+            Spending
+          </Label>
+          <SectionCard>
+            {topSpending.map(({ category, spent: catSpent, limit }, i) => (
+              <View key={category.id}>
+                <Row>
+                  <EmojiPlain glyph={category.emoji || FALLBACK_EMOJI} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View
+                      style={{
+                        flexDirection: "row", alignItems: "baseline",
+                        justifyContent: "space-between", marginBottom: space.sm,
+                      }}
+                    >
+                      <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
+                        {category.name}
+                      </Text>
+                      <Text style={type.rowSub}>
+                        {limit
+                          ? `${formatWhole(toDisplay(limit - catSpent), displayCurrency)} left`
+                          : "no limit"}
+                      </Text>
+                    </View>
+                    <Thin
+                      spent={catSpent}
+                      budget={limit ?? catSpent}
+                      tone={CATEGORY_COLORS[category.colorKey]}
+                    />
                   </View>
-                  <Thin
-                    spent={catSpent}
-                    budget={limit ?? catSpent}
-                    tone={CATEGORY_COLORS[category.colorKey]}
-                  />
-                </View>
-                <AmtShort minor={toDisplay(catSpent)} currency={displayCurrency} />
-              </Row>
-              {i < spending.length - 1 && <Rule />}
-            </View>
-          ))}
-          <Rule />
+                  <AmtShort minor={toDisplay(catSpent)} currency={displayCurrency} />
+                </Row>
+                {i < topSpending.length - 1 && <Rule full />}
+              </View>
+            ))}
+          </SectionCard>
         </>
       )}
 
@@ -206,32 +251,33 @@ export default function HomeScreen() {
       {txns.length > 0 && (
         <>
           <Label>Recent</Label>
-          {txns.slice(0, 6).map((t, i, arr) => {
-            const cat = catFor(t.categoryId);
-            return (
-              <View key={t.id}>
-                <Row>
-                  <Emoji glyph={cat?.emoji || FALLBACK_EMOJI} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
-                      {t.note || cat?.name || "Entry"}
-                    </Text>
-                    <Text style={type.rowSub}>{formatRelativeDay(t.occurredAt)}</Text>
-                  </View>
-                  <Amt
-                    minor={toDisplay(t.kind === "income" ? t.baseMinor : -t.baseMinor)}
-                    currency={displayCurrency}
-                    size="sm"
-                    signed
-                    hideFraction
-                    tone={t.kind === "income" ? color.accent : color.ink}
-                  />
-                </Row>
-                {i < arr.length - 1 && <Rule />}
-              </View>
-            );
-          })}
-          <Rule />
+          <SectionCard>
+            {txns.slice(0, 6).map((t, i, arr) => {
+              const cat = catFor(t.categoryId);
+              return (
+                <View key={t.id}>
+                  <Row>
+                    <Emoji glyph={cat?.emoji || FALLBACK_EMOJI} />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
+                        {t.note || cat?.name || "Entry"}
+                      </Text>
+                      <Text style={type.rowSub}>{formatRelativeDay(t.occurredAt)}</Text>
+                    </View>
+                    <Amt
+                      minor={toDisplay(t.kind === "income" ? t.baseMinor : -t.baseMinor)}
+                      currency={displayCurrency}
+                      size="sm"
+                      signed
+                      hideFraction
+                      tone={t.kind === "income" ? color.positive : color.ink}
+                    />
+                  </Row>
+                  {i < arr.length - 1 && <Rule full />}
+                </View>
+              );
+            })}
+          </SectionCard>
         </>
       )}
 
@@ -239,22 +285,24 @@ export default function HomeScreen() {
       {upcoming.length > 0 && (
         <>
           <Label>Upcoming payments</Label>
-          {upcoming.map((r, i) => (
-            <View key={r.id}>
-              <Row>
-                <EmojiPlain glyph={catFor(r.categoryId)?.emoji || FALLBACK_EMOJI} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
-                    {r.label}
-                  </Text>
-                  <Text style={type.rowSub}>{formatRelativeDay(r.nextRunAt)}</Text>
-                </View>
-                <Amt minor={toDisplay(r.amountMinor)} currency={displayCurrency}
-                     size="sm" hideFraction />
-              </Row>
-              {i < upcoming.length - 1 && <Rule />}
-            </View>
-          ))}
+          <SectionCard>
+            {upcoming.map((r, i) => (
+              <View key={r.id}>
+                <Row>
+                  <EmojiPlain glyph={catFor(r.categoryId)?.emoji || FALLBACK_EMOJI} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
+                      {r.label}
+                    </Text>
+                    <Text style={type.rowSub}>{formatRelativeDay(r.nextRunAt)}</Text>
+                  </View>
+                  <Amt minor={toDisplay(r.amountMinor)} currency={displayCurrency}
+                       size="sm" hideFraction />
+                </Row>
+                {i < upcoming.length - 1 && <Rule full />}
+              </View>
+            ))}
+          </SectionCard>
         </>
       )}
     </ScrollView>

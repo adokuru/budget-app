@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Linking, Platform, ScrollView, Text, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Label, Rule } from "@/components/primitives";
+import { Label, Rule, SectionCard } from "@/components/primitives";
 import { SettingsToggleRow } from "@/components/settings-row";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { useToast } from "@/components/toast";
@@ -58,49 +58,55 @@ export default function RemindersScreen() {
       contentContainerStyle={{ paddingBottom: space.huge }}
     >
       <Label>Status</Label>
-      <View style={rowStyle}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ ...type.rowTitleLg, color: color.ink }}>Notifications</Text>
-          <Text style={type.rowSub}>{permission ? "Allowed on this device" : "Not allowed yet"}</Text>
+      <SectionCard>
+        <View style={rowStyle}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ ...type.rowTitleLg, color: color.ink }}>Notifications</Text>
+            <Text style={type.rowSub}>{permission ? "Allowed on this device" : "Not allowed yet"}</Text>
+          </View>
+          {!permission && (
+            <Pressable onPress={() => void Linking.openSettings()} hitSlop={10}>
+              <Text style={type.action}>Settings</Text>
+            </Pressable>
+          )}
         </View>
-        {!permission && (
-          <Pressable onPress={() => void Linking.openSettings()} hitSlop={10}>
-            <Text style={type.action}>Settings</Text>
-          </Pressable>
-        )}
-      </View>
+      </SectionCard>
 
       <Label>Reminders</Label>
-      <SettingsToggleRow
-        label="Daily check-in"
-        sub="An evening nudge to add anything you spent today."
-        value={prefs.dailyReminderEnabled}
-        onChange={(value) => value ? void enable(prefs.setDailyReminderEnabled) : prefs.setDailyReminderEnabled(false)}
-      />
-      <Rule />
-      <SettingsToggleRow
-        label="Recurring items"
-        sub="A heads-up before rent, subscriptions, salary and other scheduled items."
-        value={prefs.recurringReminderEnabled}
-        onChange={(value) => value ? void enable(prefs.setRecurringReminderEnabled) : prefs.setRecurringReminderEnabled(false)}
-      />
+      <SectionCard>
+        <SettingsToggleRow
+          label="Daily check-in"
+          sub="An evening nudge to add anything you spent today."
+          value={prefs.dailyReminderEnabled}
+          onChange={(value) => value ? void enable(prefs.setDailyReminderEnabled) : prefs.setDailyReminderEnabled(false)}
+        />
+        <Rule full />
+        <SettingsToggleRow
+          label="Recurring items"
+          sub="A heads-up before rent, subscriptions, salary and other scheduled items."
+          value={prefs.recurringReminderEnabled}
+          onChange={(value) => value ? void enable(prefs.setRecurringReminderEnabled) : prefs.setRecurringReminderEnabled(false)}
+        />
+      </SectionCard>
 
       {(prefs.dailyReminderEnabled || prefs.recurringReminderEnabled) && (
         <>
           <Label>Schedule</Label>
-          <View style={rowStyle}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ ...type.rowTitleLg, color: color.ink }}>Reminder time</Text>
-              <Text style={type.rowSub}>Uses this device&apos;s local time.</Text>
+          <SectionCard>
+            <View style={rowStyle}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ ...type.rowTitleLg, color: color.ink }}>Reminder time</Text>
+                <Text style={type.rowSub}>Uses this device&apos;s local time.</Text>
+              </View>
+              {Platform.OS === "ios" ? timePicker : (
+                <Pressable onPress={() => setShowAndroidPicker(true)} style={chipStyle}>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: color.ink }}>
+                    {formatReminderTime(prefs.reminderHour, prefs.reminderMinute)}
+                  </Text>
+                </Pressable>
+              )}
             </View>
-            {Platform.OS === "ios" ? timePicker : (
-              <Pressable onPress={() => setShowAndroidPicker(true)} style={chipStyle}>
-                <Text style={{ fontSize: 13, fontWeight: "700", color: color.ink }}>
-                  {formatReminderTime(prefs.reminderHour, prefs.reminderMinute)}
-                </Text>
-              </Pressable>
-            )}
-          </View>
+          </SectionCard>
           {showAndroidPicker && timePicker}
         </>
       )}
@@ -137,21 +143,22 @@ export default function RemindersScreen() {
       )}
 
       <Label>Check</Label>
-      <Pressable
-        onPress={() => void scheduleTestReminder().then((sent) => {
-          setPermission(sent);
-          show(
-            sent ? "Test reminder scheduled for five seconds" : "Notifications are off",
-            { tone: sent ? "success" : "error" }
-          );
-        })}
-        style={({ pressed }) => ({ ...rowStyle, backgroundColor: pressed ? color.pressed : color.canvas })}
-      >
-        <Text style={{ ...type.rowTitleLg, fontWeight: "600", color: color.accent }}>
-          Send a test reminder
-        </Text>
-      </Pressable>
-      <Rule />
+      <SectionCard>
+        <Pressable
+          onPress={() => void scheduleTestReminder().then((sent) => {
+            setPermission(sent);
+            show(
+              sent ? "Test reminder scheduled for five seconds" : "Notifications are off",
+              { tone: sent ? "success" : "error" }
+            );
+          })}
+          style={({ pressed }) => ({ ...rowStyle, backgroundColor: pressed ? color.pressed : color.surface })}
+        >
+          <Text style={{ ...type.rowTitleLg, fontWeight: "600", color: color.accent }}>
+            Send a test reminder
+          </Text>
+        </Pressable>
+      </SectionCard>
     </ScrollView>
   );
 }

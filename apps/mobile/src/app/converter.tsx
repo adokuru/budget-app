@@ -102,7 +102,8 @@ function Side({
     <View
       style={{
         flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-        backgroundColor: active ? color.ink : color.canvas,
+        backgroundColor: active ? color.ink : color.surface,
+        borderWidth: active ? 0 : 1, borderColor: color.hairline,
         borderRadius: radius.card, ...CONTINUOUS, padding: space.lg,
       }}
     >

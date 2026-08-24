@@ -128,7 +128,7 @@ export default function RecurringRuleSheet() {
             minor={minor}
             currency={displayCurrency}
             size="xl"
-            tone={minor === 0 ? color.hairline : kind === "income" ? color.accent : color.ink}
+            tone={minor === 0 ? color.hairline : kind === "income" ? color.positive : color.ink}
             hideFraction={!raw.includes(".")}
           />
           <Text style={{ ...type.rowSub, color: color.faint, marginTop: space.xs }}>

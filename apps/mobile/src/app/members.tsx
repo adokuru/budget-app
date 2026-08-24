@@ -85,7 +85,7 @@ export default function MembersSheet() {
       </View>
 
       {members === null ? <ActivityIndicator /> : (
-        <View style={{ backgroundColor: color.canvas, borderRadius: radius.card, ...CONTINUOUS }}>
+        <View style={{ backgroundColor: color.surface, borderWidth: 1, borderColor: color.hairline, borderRadius: radius.card, overflow: "hidden", ...CONTINUOUS }}>
           {members.map((m, i) => (
             <View
               key={m.id}

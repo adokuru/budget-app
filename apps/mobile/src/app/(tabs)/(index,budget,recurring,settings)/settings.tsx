@@ -4,7 +4,7 @@ import { useSpace } from "@/state/space";
 import { useAuth } from "@/state/auth";
 import { usePrefs } from "@/state/prefs";
 import { AppHeader } from "@/components/app-header";
-import { Rule, Label, StatStrip } from "@/components/primitives";
+import { Rule, Label, SectionCard, StatStrip } from "@/components/primitives";
 import { SettingsNavRow, SettingsToggleRow } from "@/components/settings-row";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { formatReminderTime } from "@/lib/reminders";
@@ -29,93 +29,100 @@ export default function SettingsScreen() {
       <AppHeader spaceName={current.name} isShared={isShared} />
 
       {/* ── Profile ── */}
-      <View
-        style={{
-          flexDirection: "row", alignItems: "center", gap: space.base,
-          paddingHorizontal: GUTTER, paddingVertical: space.lg,
-        }}
-      >
+      <SectionCard style={{ marginTop: space.sm }}>
         <View
           style={{
-            width: 48, height: 48, borderRadius: 24, backgroundColor: color.accent,
-            alignItems: "center", justifyContent: "center",
+            flexDirection: "row", alignItems: "center", gap: space.base,
+            paddingHorizontal: GUTTER, paddingVertical: space.lg,
           }}
         >
-          <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 16, color: color.onAccent }}>
-            {initials}
-          </Text>
+          <View
+            style={{
+              width: 48, height: 48, borderRadius: 24, backgroundColor: color.accent,
+              alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 16, color: color.onAccent }}>
+              {initials}
+            </Text>
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ fontSize: 15, fontWeight: "700", color: color.ink }} numberOfLines={1}>
+              {user?.name ?? "You"}
+            </Text>
+            <Text style={type.rowSub} numberOfLines={1}>{user?.email ?? ""}</Text>
+          </View>
         </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontSize: 15, fontWeight: "700", color: color.ink }} numberOfLines={1}>
-            {user?.name ?? "You"}
-          </Text>
-          <Text style={type.rowSub} numberOfLines={1}>{user?.email ?? ""}</Text>
-        </View>
-      </View>
-
-      <StatStrip
-        bordered
-        items={[
-          { label: "Space", value: <Val>{current.name}</Val> },
-          { label: "Reports in", value: <Val>{baseCurrency}</Val> },
-          { label: "Showing", value: <Val>{displayCurrency}</Val> },
-        ]}
-      />
+        <StatStrip
+          bordered
+          items={[
+            { label: "Space", value: <Val>{current.name}</Val> },
+            { label: "Reports in", value: <Val>{baseCurrency}</Val> },
+            { label: "Showing", value: <Val>{displayCurrency}</Val> },
+          ]}
+        />
+      </SectionCard>
 
       {/* ── Account ── */}
       <Label>Account</Label>
-      <SettingsNavRow label="Spaces" sub="Switch or create a space" href="/spaces" />
-      <Rule />
-      <SettingsNavRow
-        label="Currency"
-        sub={`${CURRENCIES[displayCurrency].name} (${CURRENCIES[displayCurrency].symbol})`}
-        href="/currency"
-      />
-      <Rule />
-      <SettingsNavRow label="Members and invites" sub={isShared ? "Shared space" : "Invite someone"} href="/members" />
+      <SectionCard>
+        <SettingsNavRow label="Spaces" sub="Switch or create a space" href="/spaces" />
+        <Rule full />
+        <SettingsNavRow
+          label="Currency"
+          sub={`${CURRENCIES[displayCurrency].name} (${CURRENCIES[displayCurrency].symbol})`}
+          href="/currency"
+        />
+        <Rule full />
+        <SettingsNavRow label="Members and invites" sub={isShared ? "Shared space" : "Invite someone"} href="/members" />
+      </SectionCard>
 
       {/* ── Preferences ── */}
       <Label>Preferences</Label>
-      <SettingsNavRow
-        label="Notifications"
-        sub={prefs.dailyReminderEnabled || prefs.recurringReminderEnabled
-          ? `On · ${formatReminderTime(prefs.reminderHour, prefs.reminderMinute)}`
-          : "Off"}
-        href="/reminders"
-      />
-      <Rule />
-      <SettingsNavRow
-        label="Widgets"
-        sub="Track this month's budget from the Home Screen"
-        href="/widgets"
-      />
-      <Rule />
-      <SettingsToggleRow
-        label="Haptics"
-        sub="Taps and confirmations give a small nudge."
-        value={prefs.haptics}
-        onChange={prefs.setHaptics}
-      />
-      <Rule />
-      <SettingsToggleRow
-        label="Confirm income by default"
-        sub="New income asks whether it landed instead of posting itself."
-        value={prefs.confirmIncome}
-        onChange={prefs.setConfirmIncome}
-      />
-      <Rule />
-      <SettingsToggleRow
-        label="Sync on app open"
-        sub="Off means changes only travel when you pull to refresh."
-        value={prefs.autoSync}
-        onChange={prefs.setAutoSync}
-      />
+      <SectionCard>
+        <SettingsNavRow
+          label="Notifications"
+          sub={prefs.dailyReminderEnabled || prefs.recurringReminderEnabled
+            ? `On · ${formatReminderTime(prefs.reminderHour, prefs.reminderMinute)}`
+            : "Off"}
+          href="/reminders"
+        />
+        <Rule full />
+        <SettingsNavRow
+          label="Widgets"
+          sub="Track this month's budget from the Home Screen"
+          href="/widgets"
+        />
+        <Rule full />
+        <SettingsToggleRow
+          label="Haptics"
+          sub="Taps and confirmations give a small nudge."
+          value={prefs.haptics}
+          onChange={prefs.setHaptics}
+        />
+        <Rule full />
+        <SettingsToggleRow
+          label="Confirm income by default"
+          sub="New income asks whether it landed instead of posting itself."
+          value={prefs.confirmIncome}
+          onChange={prefs.setConfirmIncome}
+        />
+        <Rule full />
+        <SettingsToggleRow
+          label="Sync on app open"
+          sub="Off means changes only travel when you pull to refresh."
+          value={prefs.autoSync}
+          onChange={prefs.setAutoSync}
+        />
+      </SectionCard>
 
       {/* ── Planning ── */}
       <Label>Planning</Label>
-      <SettingsNavRow label="Add a recurring item" href="/recurring-rule" />
-      <Rule />
-      <SettingsNavRow label="Set a budget" href="/budget-editor" />
+      <SectionCard>
+        <SettingsNavRow label="Add a recurring item" href="/recurring-rule" />
+        <Rule full />
+        <SettingsNavRow label="Set a budget" href="/budget-editor" />
+      </SectionCard>
 
       <AccountSection />
 
@@ -143,23 +150,24 @@ function AccountSection() {
   return (
     <>
       <Label>Privacy & access</Label>
-      <Pressable
-        onPress={() => void signOut()}
-        style={{ paddingHorizontal: GUTTER, paddingVertical: space.base }}
-      >
-        <Text style={{ ...type.rowTitleLg, fontWeight: "600", color: color.ink }}>Sign out</Text>
-      </Pressable>
-      <Rule />
-      {/* App Store review requires in-app account deletion wherever there is sign-in. */}
-      <Pressable
-        onPress={confirmDelete}
-        style={{ paddingHorizontal: GUTTER, paddingVertical: space.base }}
-      >
-        <Text style={{ ...type.rowTitleLg, fontWeight: "600", color: color.danger }}>
-          Delete account
-        </Text>
-      </Pressable>
-      <Rule />
+      <SectionCard>
+        <Pressable
+          onPress={() => void signOut()}
+          style={{ paddingHorizontal: GUTTER, paddingVertical: space.base }}
+        >
+          <Text style={{ ...type.rowTitleLg, fontWeight: "600", color: color.ink }}>Sign out</Text>
+        </Pressable>
+        <Rule full />
+        {/* App Store review requires in-app account deletion wherever there is sign-in. */}
+        <Pressable
+          onPress={confirmDelete}
+          style={{ paddingHorizontal: GUTTER, paddingVertical: space.base }}
+        >
+          <Text style={{ ...type.rowTitleLg, fontWeight: "600", color: color.danger }}>
+            Delete account
+          </Text>
+        </Pressable>
+      </SectionCard>
     </>
   );
 }

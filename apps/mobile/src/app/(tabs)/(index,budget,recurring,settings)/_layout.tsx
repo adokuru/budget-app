@@ -7,6 +7,13 @@ const TITLES: Record<string, string> = {
   settings: "Settings",
 };
 
+export const unstable_settings = {
+  initialRouteName: "index",
+  budget: { initialRouteName: "budget" },
+  recurring: { initialRouteName: "recurring" },
+  settings: { initialRouteName: "settings" },
+};
+
 /**
  * One shared stack, instantiated once per tab. Every tab can therefore push
  * any screen in this group (a transaction, a category) without duplicating

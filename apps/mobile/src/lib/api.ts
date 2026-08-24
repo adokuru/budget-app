@@ -7,6 +7,7 @@ import { readTokens, saveTokens, clearTokens, deviceId, type SessionUser } from 
  */
 export const API_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
+const PLATFORM = process.env.EXPO_OS ?? "ios";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -111,25 +112,25 @@ export const authApi = {
   register: (email: string, password: string, name: string) =>
     api<AuthResponse>("/auth/register", {
       method: "POST", auth: false,
-      body: { email, password, name, deviceId: deviceId(), platform: "ios" },
+      body: { email, password, name, deviceId: deviceId(), platform: PLATFORM },
     }),
 
   login: (email: string, password: string) =>
     api<AuthResponse>("/auth/login", {
       method: "POST", auth: false,
-      body: { email, password, deviceId: deviceId(), platform: "ios" },
+      body: { email, password, deviceId: deviceId(), platform: PLATFORM },
     }),
 
   apple: (idToken: string, name?: string) =>
     api<AuthResponse>("/auth/apple", {
       method: "POST", auth: false,
-      body: { idToken, name, deviceId: deviceId(), platform: "ios" },
+      body: { idToken, name, deviceId: deviceId(), platform: PLATFORM },
     }),
 
   google: (idToken: string) =>
     api<AuthResponse>("/auth/google", {
       method: "POST", auth: false,
-      body: { idToken, deviceId: deviceId(), platform: "ios" },
+      body: { idToken, deviceId: deviceId(), platform: PLATFORM },
     }),
 
   logout: () => api<void>("/auth/logout", { method: "POST" }),

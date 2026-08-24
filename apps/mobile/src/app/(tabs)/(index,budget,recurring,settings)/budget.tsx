@@ -9,12 +9,12 @@ import { useQuery } from "@/db/hooks";
 import { useSpace } from "@/state/space";
 import { Amt, AmtShort } from "@/components/amt";
 import { AppHeader } from "@/components/app-header";
-import { Rule, Label, Thin, EmojiPlain, Row } from "@/components/primitives";
+import { Rule, Label, Thin, EmojiPlain, Row, SectionCard } from "@/components/primitives";
 import { EmptyState } from "@/components/empty-state";
 import { Fab } from "@/components/fab";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { monthStart } from "@/lib/period";
-import { color, space, GUTTER, type, CATEGORY_COLORS } from "@/theme/tokens";
+import { color, space, type, CATEGORY_COLORS } from "@/theme/tokens";
 
 export default function BudgetScreen() {
   const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
@@ -72,7 +72,7 @@ export default function BudgetScreen() {
     >
       <AppHeader spaceName={current.name} isShared={isShared} />
 
-      <View style={{ paddingHorizontal: GUTTER, paddingTop: space.base, paddingBottom: space.xl }}>
+      <SectionCard style={{ marginTop: space.sm, padding: space.lg }}>
         <Text style={{ ...type.eyebrow, marginBottom: space.sm }}>
           {monthLabel()} budget
         </Text>
@@ -88,7 +88,7 @@ export default function BudgetScreen() {
                 minor={toDisplay(remaining)}
                 currency={displayCurrency}
                 size={15}
-                tone={remaining < 0 ? color.danger : color.accent}
+                tone={remaining < 0 ? color.danger : color.positive}
               />
             }
           />
@@ -102,17 +102,17 @@ export default function BudgetScreen() {
             }
           />
         </View>
-      </View>
-
-      <Rule />
+      </SectionCard>
 
       {rows.length === 0 ? (
-        <EmptyState
-          symbol="🎯"
-          title="No budgets set"
-          body="Give a category a monthly limit — ₦200,000 for food, say — and this screen tracks you against it."
-          action={{ label: "Set a budget", href: "/budget-editor" }}
-        />
+        <SectionCard style={{ marginTop: space.lg }}>
+          <EmptyState
+            symbol="🎯"
+            title="No budgets set"
+            body="Give a category a monthly limit — ₦200,000 for food, say — and this screen tracks you against it."
+            action={{ label: "Set a budget", href: "/budget-editor" }}
+          />
+        </SectionCard>
       ) : (
         <>
           <Label
@@ -127,43 +127,45 @@ export default function BudgetScreen() {
             Categories
           </Label>
 
-          {rows.map(({ category, spent, limit }, i) => {
-            const pct = percentOf(spent, limit);
-            const over = limit > 0 && spent > limit;
-            return (
-              <View key={category.id}>
-                <Row style={{ paddingVertical: space.base + 2 }}>
-                  <EmojiPlain glyph={category.emoji || FALLBACK_EMOJI} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <View
+          <SectionCard>
+            {rows.map(({ category, spent, limit }, i) => {
+              const pct = percentOf(spent, limit);
+              const over = limit > 0 && spent > limit;
+              return (
+                <View key={category.id}>
+                  <Row style={{ paddingVertical: space.base + 2 }}>
+                    <EmojiPlain glyph={category.emoji || FALLBACK_EMOJI} />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <View
+                        style={{
+                          flexDirection: "row", alignItems: "baseline",
+                          justifyContent: "space-between", marginBottom: space.sm,
+                        }}
+                      >
+                        <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
+                          {category.name}
+                        </Text>
+                        <Text style={type.rowSub}>
+                          {formatWhole(toDisplay(spent), displayCurrency)}
+                          {limit > 0 ? ` / ${formatWhole(toDisplay(limit), displayCurrency)}` : ""}
+                        </Text>
+                      </View>
+                      <Thin spent={spent} budget={limit || spent} tone={CATEGORY_COLORS[category.colorKey]} />
+                    </View>
+                    <Text
                       style={{
-                        flexDirection: "row", alignItems: "baseline",
-                        justifyContent: "space-between", marginBottom: space.sm,
+                        fontSize: 11, fontWeight: "700", width: 52, textAlign: "right",
+                        color: spent === 0 ? color.fainter : over ? color.danger : color.positive,
                       }}
                     >
-                      <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
-                        {category.name}
-                      </Text>
-                      <Text style={type.rowSub}>
-                        {formatWhole(toDisplay(spent), displayCurrency)}
-                        {limit > 0 ? ` / ${formatWhole(toDisplay(limit), displayCurrency)}` : ""}
-                      </Text>
-                    </View>
-                    <Thin spent={spent} budget={limit || spent} tone={CATEGORY_COLORS[category.colorKey]} />
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: 11, fontWeight: "700", width: 52, textAlign: "right",
-                      color: spent === 0 ? color.fainter : over ? color.danger : color.accent,
-                    }}
-                  >
-                    {spent === 0 ? "—" : over ? "over" : pct === null ? "—" : `${pct}%`}
-                  </Text>
-                </Row>
-                {i < rows.length - 1 && <Rule />}
-              </View>
-            );
-          })}
+                      {spent === 0 ? "—" : over ? "over" : pct === null ? "—" : `${pct}%`}
+                    </Text>
+                  </Row>
+                  {i < rows.length - 1 && <Rule full />}
+                </View>
+              );
+            })}
+          </SectionCard>
         </>
       )}
     </ScrollView>

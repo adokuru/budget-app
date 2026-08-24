@@ -130,7 +130,7 @@ function ToastStack({ toasts }: { toasts: ToastItem[] }) {
 
 function toneColor(tone: ToastTone): string {
   if (tone === "error") return color.danger;
-  if (tone === "success") return color.accent;
+  if (tone === "success") return color.positive;
   return color.fainter;
 }
 

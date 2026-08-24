@@ -1,14 +1,13 @@
 import { forwardRef, useState, type ComponentRef } from "react";
 import {
   Pressable,
+  Easing,
   type PressableProps,
   type PressableStateCallbackType,
 } from "react-native";
-import Animated, { cubicBezier } from "react-native-reanimated";
 import { useReducedMotion } from "@/lib/motion";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-const EASE_OUT = cubicBezier(0.23, 1, 0.32, 1);
+const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 const MOTION = {
   transform: [{ scale: 1 }],
   transitionProperty: "transform",
@@ -24,9 +23,10 @@ export const PressableScale = forwardRef<ComponentRef<typeof Pressable>, Pressab
     const reduced = useReducedMotion();
 
     return (
-      <AnimatedPressable
+      <Pressable
         {...props}
         ref={ref}
+        accessibilityRole={props.accessibilityRole ?? "button"}
         disabled={disabled}
         pressRetentionOffset={props.pressRetentionOffset ?? 16}
         onPressIn={(event) => {

@@ -65,7 +65,7 @@ export default function SpacesSheet() {
       {spaces === null ? (
         <ActivityIndicator />
       ) : (
-        <View style={{ backgroundColor: color.canvas, borderRadius: radius.card, ...CONTINUOUS }}>
+        <View style={{ backgroundColor: color.surface, borderWidth: 1, borderColor: color.hairline, borderRadius: radius.card, overflow: "hidden", ...CONTINUOUS }}>
           {spaces.map((s, i) => (
             <Pressable
               key={s.id}
@@ -163,7 +163,9 @@ export default function SpacesSheet() {
 const inputStyle = {
   ...type.body,
   color: color.ink,
-  backgroundColor: color.canvas,
+  backgroundColor: color.surface,
+  borderWidth: 1,
+  borderColor: color.hairline,
   borderRadius: radius.chip,
   ...CONTINUOUS,
   paddingHorizontal: sp.base,
@@ -198,7 +200,8 @@ function Secondary({ label, onPress }: { label: string; onPress: () => void }) {
       onPress={onPress}
       style={{
         flex: 1, height: 44, borderRadius: radius.pill,
-        alignItems: "center", justifyContent: "center", backgroundColor: color.canvas,
+        alignItems: "center", justifyContent: "center", backgroundColor: color.surface,
+        borderWidth: 1, borderColor: color.hairline,
       }}
     >
       <Text style={{ ...type.rowTitle, color: color.ink, fontWeight: "600" }}>{label}</Text>

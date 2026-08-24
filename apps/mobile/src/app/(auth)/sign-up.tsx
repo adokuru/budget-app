@@ -7,7 +7,7 @@ import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { useAuth } from "@/state/auth";
 import { Field } from "@/components/field";
-import { Wordmark } from "@/components/logo";
+import { Brand } from "@/components/logo";
 import { color, space, GUTTER, radius, type, CONTINUOUS, DISPLAY_FONT } from "@/theme/tokens";
 
 export default function SignUpScreen() {
@@ -41,15 +41,15 @@ export default function SignUpScreen() {
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: color.canvas }}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: 80, gap: space.base }}
+        contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: 52, paddingBottom: space.huge, gap: space.base }}
         keyboardShouldPersistTaps="handled"
       >
-        <Wordmark size={26} />
-        <Text style={{ ...type.screenTitle, color: color.ink, marginTop: space.md }}>
-          Create your account
+        <Brand markSize={42} wordSize={22} />
+        <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 30, lineHeight: 36, color: color.ink, marginTop: space.base }}>
+          Start with a clear month.
         </Text>
-        <Text style={{ ...type.meta, marginBottom: space.md }}>
-          You start with a private Personal space. Shared ones come later.
+        <Text style={{ ...type.body, color: color.body, marginBottom: space.md }}>
+          Create your private budget first. Invite family when you are ready.
         </Text>
 
         <Field label="Name" value={name} onChange={setName} autoComplete="name" />
@@ -59,8 +59,7 @@ export default function SignUpScreen() {
                secureTextEntry autoComplete="new-password" onSubmit={submit} />
 
         <Text style={{ ...type.rowSub, color: tooShort ? color.danger : color.faint, lineHeight: 17 }}>
-          At least 10 characters. Length beats symbols — a short phrase you can
-          remember is stronger than P@ssw0rd.
+          Use at least 10 characters. A short phrase is easiest to remember.
         </Text>
 
         {error && (
@@ -84,8 +83,8 @@ export default function SignUpScreen() {
               </Text>}
         </Pressable>
 
-        <Pressable onPress={() => router.back()} style={{ alignItems: "center", paddingVertical: space.base }}>
-          <Text style={type.action}>I already have an account</Text>
+        <Pressable onPress={() => router.replace("/(auth)/sign-in")} style={{ alignItems: "center", paddingVertical: space.base }}>
+          <Text style={type.action}>Already have an account? Sign in</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>

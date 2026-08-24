@@ -1,5 +1,5 @@
 import { Platform, ScrollView, Text, View } from "react-native";
-import { Label, Rule } from "@/components/primitives";
+import { Label, Rule, SectionCard } from "@/components/primitives";
 import { color, CONTINUOUS, DISPLAY_FONT, GUTTER, radius, space, type } from "@/theme/tokens";
 
 export default function WidgetsScreen() {
@@ -33,24 +33,25 @@ export default function WidgetsScreen() {
       </View>
 
       <Label>Add to Home Screen</Label>
-      <Step number="1" text="Touch and hold an empty area on your Home Screen." />
-      <Rule />
-      <Step number="2" text="Tap Edit, then Add Widget." />
-      <Rule />
-      <Step number="3" text="Search for Kobo Tracker and choose Budget Progress." />
+      <SectionCard>
+        <Step number="1" text="Touch and hold an empty area on your Home Screen." />
+        <Rule full />
+        <Step number="2" text="Tap Edit, then Add Widget." />
+        <Rule full />
+        <Step number="3" text="Search for Kobo Tracker and choose Budget Progress." />
+      </SectionCard>
 
       <Label>Updates</Label>
-      <View style={{ paddingHorizontal: GUTTER, paddingVertical: space.md }}>
-        <Text style={{ ...type.body, color: color.body }}>
-          The widget refreshes whenever you open Kobo Tracker or your monthly budget changes.
-        </Text>
-        {Platform.OS !== "ios" && (
-          <Text style={{ ...type.rowSub, marginTop: space.sm }}>
-            The Home Screen widget is currently available on iPhone.
+      <SectionCard style={{ paddingHorizontal: GUTTER, paddingVertical: space.md }}>
+          <Text style={{ ...type.body, color: color.body }}>
+            The widget refreshes whenever you open Kobo Tracker or your monthly budget changes.
           </Text>
-        )}
-      </View>
-      <Rule />
+          {Platform.OS !== "ios" && (
+            <Text style={{ ...type.rowSub, marginTop: space.sm }}>
+              The Home Screen widget is currently available on iPhone.
+            </Text>
+          )}
+      </SectionCard>
     </ScrollView>
   );
 }

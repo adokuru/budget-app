@@ -8,7 +8,7 @@ import {
 import { useSpace } from "@/state/space";
 import { usePrefs } from "@/state/prefs";
 import { setOverride } from "@/lib/rates";
-import { Label, Rule } from "@/components/primitives";
+import { Label, Rule, SectionCard } from "@/components/primitives";
 import { SettingsNavRow, SettingsToggleRow } from "@/components/settings-row";
 import { color, space, GUTTER, radius, type, CONTINUOUS } from "@/theme/tokens";
 
@@ -66,20 +66,21 @@ export default function CurrencyScreen() {
         entry was made at, so past months never re-price.
       </Text>
 
-      <Rule />
-      <SettingsToggleRow
-        label="Hide decimals"
-        sub="Whole naira only. Kobo rarely matters."
-        value={prefs.hideDecimals}
-        onChange={prefs.setHideDecimals}
-      />
-      <Rule />
-      <SettingsToggleRow
-        label="Show base currency too"
-        sub={`Adds ${baseCurrency}, this space's reporting currency, under converted amounts.`}
-        value={prefs.showBaseCurrency}
-        onChange={prefs.setShowBaseCurrency}
-      />
+      <SectionCard>
+        <SettingsToggleRow
+          label="Hide decimals"
+          sub="Whole naira only. Kobo rarely matters."
+          value={prefs.hideDecimals}
+          onChange={prefs.setHideDecimals}
+        />
+        <Rule full />
+        <SettingsToggleRow
+          label="Show base currency too"
+          sub={`Adds ${baseCurrency}, this space's reporting currency, under converted amounts.`}
+          value={prefs.showBaseCurrency}
+          onChange={prefs.setShowBaseCurrency}
+        />
+      </SectionCard>
 
       <Label
         action={
@@ -90,19 +91,23 @@ export default function CurrencyScreen() {
       >
         Exchange rates
       </Label>
-      {CURRENCY_CODES.filter((currency) => currency !== PIVOT).map((quote, index, quotes) => (
-        <View key={quote}>
-          <RateRow from={PIVOT} to={quote} onSaved={refreshRates} />
-          {index < quotes.length - 1 && <Rule />}
-        </View>
-      ))}
+      <SectionCard>
+        {CURRENCY_CODES.filter((currency) => currency !== PIVOT).map((quote, index, quotes) => (
+          <View key={quote}>
+            <RateRow from={PIVOT} to={quote} onSaved={refreshRates} />
+            {index < quotes.length - 1 && <Rule full />}
+          </View>
+        ))}
+      </SectionCard>
       <Text style={{ ...type.rowSub, paddingHorizontal: GUTTER, paddingVertical: space.md, lineHeight: 16 }}>
         Auto rates as of {asOf}. Type your own if the rate you actually get
         differs — yours wins everywhere.
       </Text>
 
       <Label>Tools</Label>
-      <SettingsNavRow label="Currency converter" href="/converter" />
+      <SectionCard>
+        <SettingsNavRow label="Currency converter" href="/converter" />
+      </SectionCard>
     </ScrollView>
   );
 }

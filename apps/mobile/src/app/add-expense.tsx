@@ -167,7 +167,7 @@ export default function AddEntrySheet() {
                 style={{
                   flex: 1, paddingVertical: 8, alignItems: "center",
                   borderRadius: 8, ...CONTINUOUS,
-                  backgroundColor: active ? (t === "expense" ? color.ink : color.accent) : "transparent",
+                  backgroundColor: active ? (t === "expense" ? color.ink : color.positive) : "transparent",
                 }}
               >
                 <Text
@@ -191,7 +191,7 @@ export default function AddEntrySheet() {
           minor={minor}
           currency={displayCurrency}
           size="xl"
-          tone={minor === 0 ? color.fainter : isExpense ? color.ink : color.accent}
+          tone={minor === 0 ? color.fainter : isExpense ? color.ink : color.positive}
         />
       </View>
 

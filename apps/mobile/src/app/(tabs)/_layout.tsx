@@ -2,7 +2,7 @@ import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { color } from "@/theme/tokens";
 
 /**
- * Native tabs, tinted to the design's green. Kept native so the bar gets the
+ * Native tabs, tinted to the design's cobalt. Kept native so the bar gets the
  * system's own blur, minimise-on-scroll and accessibility behaviour rather
  * than a hand-rolled imitation.
  */

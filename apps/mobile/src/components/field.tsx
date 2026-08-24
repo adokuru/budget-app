@@ -26,6 +26,7 @@ export function Field({
         autoComplete={autoComplete}
         autoCapitalize={keyboardType === "email-address" ? "none" : "words"}
         autoCorrect={false}
+        accessibilityLabel={label}
         onSubmitEditing={onSubmit}
         returnKeyType={onSubmit ? "go" : "next"}
         style={{
