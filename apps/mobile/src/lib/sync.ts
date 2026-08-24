@@ -1,4 +1,5 @@
 import { synchronize } from "@nozbe/watermelondb/sync";
+import { useSyncExternalStore } from "react";
 import { database } from "@/db";
 import { api, ApiError } from "./api";
 
@@ -9,7 +10,27 @@ export type SyncOutcome =
   | { status: "unauthenticated" }
   | { status: "error"; message: string };
 
+export type SyncSnapshot = SyncOutcome | { status: "idle" } | { status: "syncing" };
+
 let inFlight: Promise<SyncOutcome> | null = null;
+let snapshot: SyncSnapshot = { status: "idle" };
+const listeners = new Set<() => void>();
+
+export const getSyncSnapshot = (): SyncSnapshot => snapshot;
+
+export function subscribeToSync(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function useSyncStatus(): SyncSnapshot {
+  return useSyncExternalStore(subscribeToSync, getSyncSnapshot, getSyncSnapshot);
+}
+
+function publish(next: SyncSnapshot): void {
+  snapshot = next;
+  listeners.forEach((listener) => listener());
+}
 
 /**
  * Drives WatermelonDB's sync against the NestJS endpoints.
@@ -18,13 +39,26 @@ let inFlight: Promise<SyncOutcome> | null = null;
  * and overlapping runs would push the same changes twice.
  */
 export function sync(): Promise<SyncOutcome> {
-  inFlight ??= run().finally(() => {
-    inFlight = null;
-  });
+  if (!inFlight) {
+    publish({ status: "syncing" });
+    inFlight = run()
+      .then((outcome) => {
+        publish(outcome);
+        return outcome;
+      })
+      .finally(() => {
+        inFlight = null;
+      });
+  }
   return inFlight;
 }
 
 async function run(): Promise<SyncOutcome> {
+  const first = await attempt();
+  return first.status === "conflict" ? attempt() : first;
+}
+
+async function attempt(): Promise<SyncOutcome> {
   try {
     await synchronize({
       database,
@@ -53,14 +87,14 @@ async function run(): Promise<SyncOutcome> {
     if (e instanceof ApiError) {
       if (e.status === 401) return { status: "unauthenticated" };
       if (e.status === 409) {
-        // Watermelon re-pulls and resolves on the next run, so this is a
-        // "try again in a moment", not a failure the user must act on.
         return { status: "conflict", message: e.message };
       }
       return { status: "error", message: e.message };
     }
-    // fetch() rejects rather than returning a status when there is no network.
-    return { status: "offline" };
+    const message = e instanceof Error ? e.message : "Synchronization failed";
+    return /network request failed|failed to fetch|internet connection|offline/i.test(message)
+      ? { status: "offline" }
+      : { status: "error", message };
   }
 }
 

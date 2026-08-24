@@ -13,7 +13,6 @@ export type Prefs = {
   showBaseCurrency: boolean;
   haptics: boolean;
   confirmIncome: boolean;
-  autoSync: boolean;
   dailyReminderEnabled: boolean;
   recurringReminderEnabled: boolean;
   reminderHour: number;
@@ -27,7 +26,6 @@ const DEFAULTS: Prefs = {
   showBaseCurrency: false,
   haptics: true,
   confirmIncome: true,      // Nigerian salaries slip; ask by default
-  autoSync: true,
   dailyReminderEnabled: false,
   recurringReminderEnabled: false,
   reminderHour: 20,
@@ -43,7 +41,6 @@ type PrefsValue = Prefs & {
   setShowBaseCurrency: (v: boolean) => void;
   setHaptics: (v: boolean) => void;
   setConfirmIncome: (v: boolean) => void;
-  setAutoSync: (v: boolean) => void;
   setDailyReminderEnabled: (v: boolean) => void;
   setRecurringReminderEnabled: (v: boolean) => void;
   setReminderTime: (hour: number, minute: number) => void;
@@ -85,7 +82,6 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         setShowBaseCurrency: (v) => update({ showBaseCurrency: v }),
         setHaptics: (v) => update({ haptics: v }),
         setConfirmIncome: (v) => update({ confirmIncome: v }),
-        setAutoSync: (v) => update({ autoSync: v }),
         setDailyReminderEnabled: (v) => update({ dailyReminderEnabled: v }),
         setRecurringReminderEnabled: (v) => update({ recurringReminderEnabled: v }),
         setReminderTime: (hour, minute) => update({ reminderHour: hour, reminderMinute: minute }),

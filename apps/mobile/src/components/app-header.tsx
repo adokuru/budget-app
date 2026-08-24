@@ -6,9 +6,11 @@ import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Brand } from "@/components/logo";
 import { space, GUTTER, radius } from "@/theme/tokens";
 import { useTheme } from "@/hooks/use-theme";
+import { sync, useSyncStatus } from "@/lib/sync";
+import { useAuth } from "@/state/auth";
 
 /**
- * The wordmark, a space chip, and a bell. Sits above the native large-title
+ * The wordmark, space chip, and quiet sync state. Sits above the native large-title
  * area on every tab so the brand is present without a second nav bar.
  */
 export function AppHeader({
@@ -19,44 +21,87 @@ export function AppHeader({
   isShared: boolean;
 }) {
   const { color, shadow, type } = useTheme();
+  const syncStatus = useSyncStatus();
+  const { signOut } = useAuth();
+  const syncLabel = {
+    idle: undefined,
+    ok: undefined,
+    syncing: "Syncing",
+    offline: "Offline · saved on device",
+    conflict: "Conflict",
+    unauthenticated: "Sign in again",
+    error: "Sync issue",
+  }[syncStatus.status];
+
   return (
     <View
       style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
         paddingHorizontal: GUTTER,
         paddingVertical: space.md,
       }}
     >
-      <Brand markSize={32} wordSize={17} />
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <Brand markSize={32} wordSize={17} />
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push("/spaces");
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: space.xs,
+              backgroundColor: color.surface,
+              borderRadius: radius.pill,
+              borderWidth: 1,
+              borderColor: color.hairline,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              ...shadow.card,
+            }}
+          >
+            <Text style={{ fontSize: 12 }}>{isShared ? "👨‍👩‍👧" : "👤"}</Text>
+            <Text style={{ ...type.body, fontWeight: "600", color: color.ink }} numberOfLines={1}>
+              {spaceName}
+            </Text>
+            <Image source="sf:chevron.down" tintColor={color.faint} style={{ width: 9, height: 9 }} />
+          </Pressable>
+        </View>
+      </View>
+
+      {syncLabel && (
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={syncStatus.status === "syncing" ? syncLabel : `${syncLabel}. Tap to retry.`}
+          disabled={syncStatus.status === "syncing"}
           onPress={() => {
-            Haptics.selectionAsync();
-            router.push("/spaces");
+            if (syncStatus.status === "unauthenticated") void signOut();
+            else void sync();
           }}
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: space.xs,
-            backgroundColor: color.surface,
+            alignSelf: "flex-end",
+            marginTop: space.xs,
+            paddingHorizontal: 9,
+            paddingVertical: 4,
             borderRadius: radius.pill,
+            backgroundColor: syncStatus.status === "offline" ? color.surface : color.surfaceStrong,
             borderWidth: 1,
-            borderColor: color.hairline,
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            ...shadow.card,
+            borderColor: syncStatus.status === "offline" ? color.hairline : color.surfaceStrong,
           }}
         >
-          <Text style={{ fontSize: 12 }}>{isShared ? "👨‍👩‍👧" : "👤"}</Text>
-          <Text style={{ ...type.body, fontWeight: "600", color: color.ink }} numberOfLines={1}>
-            {spaceName}
+          <Text
+            style={{
+              ...type.meta,
+              fontWeight: "700",
+              color: syncStatus.status === "offline" ? color.faint : color.onStrong,
+            }}
+          >
+            {syncLabel}
           </Text>
-          <Image source="sf:chevron.down" tintColor={color.faint} style={{ width: 9, height: 9 }} />
         </Pressable>
-      </View>
+      )}
     </View>
   );
 }

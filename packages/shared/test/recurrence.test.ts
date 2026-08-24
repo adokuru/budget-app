@@ -43,6 +43,14 @@ test("weekly lands on the requested weekday", () => {
   assert.equal(iso(nextOccurrence(r, d("2026-08-24"))), "2026-08-31");
 });
 
+test("moving the cursor to today makes edits and resumes future-only", () => {
+  const monthly: Recurrence = { freq: "monthly", dayOfMonth: 24, startOn: d("2026-08-24") };
+  assert.equal(iso(nextOccurrence(monthly, d("2026-08-24"))), "2026-09-24");
+
+  const weekly: Recurrence = { freq: "weekly", weekday: 1, startOn: d("2026-08-24") };
+  assert.equal(iso(nextOccurrence(weekly, d("2026-08-24"))), "2026-08-31");
+});
+
 test("biweekly steps 14 days, not 7", () => {
   const r: Recurrence = { freq: "biweekly", weekday: 1, startOn: d("2026-08-22") };
   const first = nextOccurrence(r, d("2026-08-22"))!;

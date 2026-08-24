@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PressableScale } from "@/components/pressable-scale";
 import { useTheme } from "@/hooks/use-theme";
+import { useSpace } from "@/state/space";
 
 /**
  * The add button, as the design places it: a small green disc floating clear
@@ -12,6 +13,8 @@ import { useTheme } from "@/hooks/use-theme";
  */
 export function Fab() {
   const { color, shadow } = useTheme();
+  const { canEdit } = useSpace();
+  if (!canEdit) return null;
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", right: 20, bottom: 108, zIndex: 20 }}>
       <PressableScale

@@ -15,7 +15,9 @@ export function useQuery<T extends Model>(
   const [rows, setRows] = useState<T[]>([]);
 
   useEffect(() => {
-    const sub = build().observe().subscribe(setRows);
+    const query = build();
+    const columns = query.collection.schema.columnArray.map((column) => column.name);
+    const sub = query.observeWithColumns(columns).subscribe(setRows);
     return () => sub.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);

@@ -35,7 +35,7 @@ export default function TabRootScreen() {
 
 function HomeScreen() {
   const { color, type } = useTheme();
-  const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
+  const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared, canEdit } = useSpace();
   const since = useMemo(() => monthStart().getTime(), []);
 
   const txns = useQuery<Transaction>(
@@ -251,13 +251,26 @@ function HomeScreen() {
       {/* ── Recent ── */}
       {txns.length > 0 && (
         <>
-          <Label>Recent</Label>
+          <Label
+            action={(
+              <Pressable onPress={() => router.push("/transactions")} hitSlop={10}>
+                <Text style={type.action}>View all</Text>
+              </Pressable>
+            )}
+          >
+            Recent
+          </Label>
           <SectionCard>
             {txns.slice(0, 6).map((t, i, arr) => {
               const cat = catFor(t.categoryId);
               return (
                 <View key={t.id}>
-                  <Row>
+                  <Pressable
+                    accessibilityLabel={canEdit ? `Edit ${t.note || cat?.name || "entry"}` : undefined}
+                    disabled={!canEdit}
+                    onPress={() => router.push({ pathname: "/add-expense", params: { id: t.id } })}
+                  >
+                    <Row>
                     <Emoji glyph={cat?.emoji || FALLBACK_EMOJI} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
@@ -273,7 +286,8 @@ function HomeScreen() {
                       hideFraction
                       tone={t.kind === "income" ? color.positive : color.ink}
                     />
-                  </Row>
+                    </Row>
+                  </Pressable>
                   {i < arr.length - 1 && <Rule full />}
                 </View>
               );

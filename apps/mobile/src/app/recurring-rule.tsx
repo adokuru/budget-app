@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
-import { ScrollView, Switch, Text, View } from "react-native";
-import { router } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, ScrollView, Switch, Text, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
 import {
-  applyKey, toMinor, describeRecurrence, nextOccurrence, utcDay,
+  applyKey, toMajor, toMinor, describeRecurrence, nextOccurrence, utcDay,
   type AmountKey, type CategoryKind, type Freq,
 } from "@budget/shared";
 import { database } from "@/db";
@@ -28,9 +28,12 @@ const FREQS: { key: Freq; label: string }[] = [
 ];
 
 export default function RecurringRuleSheet() {
+  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const ruleId = Array.isArray(id) ? id[0] : id;
   const { color, type } = useTheme();
-  const { spaceId, displayCurrency } = useSpace();
+  const { spaceId, displayCurrency, canEdit } = useSpace();
   const { show } = useToast();
+  const [rule, setRule] = useState<RecurringRule | null>(null);
   const [kind, setKind] = useState<CategoryKind>("expense");
   const [freq, setFreq] = useState<Freq>("monthly");
   const [dayOfMonth, setDayOfMonth] = useState(25);
@@ -38,6 +41,28 @@ export default function RecurringRuleSheet() {
   const [autoPost, setAutoPost] = useState(true);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [raw, setRaw] = useState("0");
+
+  useEffect(() => {
+    if (canEdit) return;
+    router.back();
+  }, [canEdit]);
+
+  useEffect(() => {
+    if (!ruleId) return;
+    let cancelled = false;
+    database.get<RecurringRule>("recurring_rules").find(ruleId).then((found) => {
+      if (cancelled || found.spaceId !== spaceId) return router.back();
+      setRule(found);
+      setKind(found.kind);
+      setFreq(found.freq);
+      setDayOfMonth(found.dayOfMonth ?? 25);
+      setWeekday(found.weekday ?? 1);
+      setAutoPost(found.autoPost);
+      setCategoryId(found.categoryId);
+      setRaw(String(toMajor(found.amountMinor, found.currency)));
+    }).catch(() => router.back());
+    return () => { cancelled = true; };
+  }, [ruleId, spaceId]);
 
   const categories = useQuery<Category>(
     () =>
@@ -48,9 +73,10 @@ export default function RecurringRuleSheet() {
     [spaceId, kind]
   );
 
-  const minor = toMinor(raw || "0", displayCurrency);
+  const currency = rule?.currency ?? displayCurrency;
+  const minor = toMinor(raw || "0", currency);
   const category = categories.find((c) => c.id === categoryId);
-  const canSave = minor > 0 && category != null;
+  const canSave = canEdit && minor > 0 && category != null && (!ruleId || rule != null);
 
   const recurrence = useMemo(
     () => ({
@@ -65,35 +91,97 @@ export default function RecurringRuleSheet() {
 
   async function save() {
     if (!canSave) return;
-    const next = nextOccurrence(recurrence, utcDay(Date.now()) - 1) ?? utcDay(Date.now());
+    const today = utcDay(Date.now());
+    const cursor = rule ? today : today - 1;
+    const next = nextOccurrence(recurrence, cursor) ?? utcDay(Date.now());
 
-    await database.write(async () => {
-      await database.get<RecurringRule>("recurring_rules").create((r) => {
-        r.spaceId = spaceId;
-        r.categoryId = category!.id;
-        r.kind = kind;
-        r.label = category!.name;
-        r.amountMinor = minor;
-        r.currency = displayCurrency;
-        r.freq = freq;
-        r.dayOfMonth = recurrence.dayOfMonth;
-        r.weekday = recurrence.weekday;
-        r.interval = 1;
-        r.startOn = new Date(recurrence.startOn);
-        r.endOn = null;
-        r.autoPost = autoPost;
-        r.nextRunAt = new Date(next);
-        r.lastRunAt = null;
-        r.active = true;
+    try {
+      await database.write(async () => {
+        if (rule) {
+          await rule.update((r) => {
+            r.categoryId = category!.id;
+            r.kind = kind;
+            r.label = category!.name;
+            r.amountMinor = minor;
+            r.freq = freq;
+            r.dayOfMonth = recurrence.dayOfMonth;
+            r.weekday = recurrence.weekday;
+            r.interval = 1;
+            r.startOn = new Date(recurrence.startOn);
+            r.endOn = null;
+            r.autoPost = autoPost;
+            r.nextRunAt = new Date(next);
+            if (r.active) r.lastRunAt = new Date(cursor);
+          });
+          return;
+        }
+
+        await database.get<RecurringRule>("recurring_rules").create((r) => {
+          r.spaceId = spaceId;
+          r.categoryId = category!.id;
+          r.kind = kind;
+          r.label = category!.name;
+          r.amountMinor = minor;
+          r.currency = displayCurrency;
+          r.freq = freq;
+          r.dayOfMonth = recurrence.dayOfMonth;
+          r.weekday = recurrence.weekday;
+          r.interval = 1;
+          r.startOn = new Date(recurrence.startOn);
+          r.endOn = null;
+          r.autoPost = autoPost;
+          r.nextRunAt = new Date(next);
+          r.lastRunAt = null;
+          r.active = true;
+        });
       });
-    });
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    show("Recurring item saved", { tone: "success" });
-    // Push it up now; the family should not have to wait for a foreground.
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      show(rule ? "Recurring item updated" : "Recurring item saved", { tone: "success" });
+      syncQuietly();
+      router.back();
+    } catch (error) {
+      show(error instanceof Error ? error.message : "Could not save this recurring item", { tone: "error" });
+    }
+  }
+
+  async function setActive(active: boolean) {
+    if (!rule) return;
+    const cursor = utcDay(Date.now());
+    const next = nextOccurrence(recurrence, cursor) ?? utcDay(Date.now());
+    await database.write(() => rule.update((r) => {
+      r.active = active;
+      if (active) {
+        r.startOn = new Date(recurrence.startOn);
+        r.lastRunAt = new Date(cursor);
+        r.nextRunAt = new Date(next);
+      }
+    }));
+    show(active ? "Recurring item resumed" : "Recurring item paused", { tone: "success" });
     syncQuietly();
     router.back();
   }
+
+  function confirmDelete() {
+    if (!rule) return;
+    Alert.alert(
+      "Delete recurring item?",
+      "Past entries stay in your history. No future entries will be added.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Confirm deletion", style: "destructive",
+          onPress: () => void database.write(() => rule.markAsDeleted()).then(() => {
+            show("Recurring item deleted", { tone: "success" });
+            syncQuietly();
+            router.back();
+          }).catch(() => show("Could not delete this recurring item", { tone: "error" })),
+        },
+      ]
+    );
+  }
+
+  if (!canEdit || (ruleId && !rule)) return null;
 
   return (
     /*
@@ -104,6 +192,7 @@ export default function RecurringRuleSheet() {
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
       contentContainerStyle={{ paddingBottom: space.xxl, gap: space.base }}
+      stickyHeaderIndices={[0]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
@@ -117,8 +206,10 @@ export default function RecurringRuleSheet() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Text style={{ ...type.body, color: color.faint }}>Cancel</Text>
         </Pressable>
-        <Text style={{ ...type.body, fontWeight: "600", color: color.ink }}>New recurring item</Text>
-        <Pressable onPress={save} disabled={!canSave} hitSlop={12}>
+        <Text style={{ ...type.body, fontWeight: "600", color: color.ink }}>
+          {rule ? "Edit recurring item" : "New recurring item"}
+        </Text>
+        <Pressable accessibilityLabel="Save recurring item" onPress={save} disabled={!canSave} hitSlop={12}>
           <Text style={{ ...type.body, fontWeight: "600", color: canSave ? color.accent : color.hairline }}>
             Save
           </Text>
@@ -128,7 +219,7 @@ export default function RecurringRuleSheet() {
         <View style={{ alignItems: "center", paddingTop: space.sm }}>
           <Amt
             minor={minor}
-            currency={displayCurrency}
+            currency={currency}
             size="xl"
             tone={minor === 0 ? color.hairline : kind === "income" ? color.positive : color.ink}
             hideFraction={!raw.includes(".")}
@@ -189,7 +280,26 @@ export default function RecurringRuleSheet() {
 
         <View style={{ paddingHorizontal: space.lg }}>
           <Keypad onKey={(k: AmountKey) => setRaw((r) => applyKey(r, k))} />
-      </View>
+        </View>
+
+        {rule && (
+          <View style={{ paddingHorizontal: space.lg, gap: space.sm }}>
+            <Pressable
+              accessibilityLabel={rule.active ? "Pause recurring item" : "Resume recurring item"}
+              onPress={() => void setActive(!rule.active)}
+              style={{ paddingVertical: 13, alignItems: "center" }}
+            >
+              <Text style={type.action}>{rule.active ? "Pause" : "Resume"}</Text>
+            </Pressable>
+            <Pressable
+              accessibilityLabel="Delete recurring item"
+              onPress={confirmDelete}
+              style={{ paddingVertical: 13, alignItems: "center" }}
+            >
+              <Text style={{ ...type.action, color: color.danger }}>Delete recurring item</Text>
+            </Pressable>
+          </View>
+        )}
     </ScrollView>
   );
 }
@@ -213,6 +323,7 @@ function Segmented({
       {options.map((o) => (
         <Pressable
           key={o.key}
+          accessibilityLabel={o.label}
           onPress={() => { Haptics.selectionAsync(); onChange(o.key); }}
           style={{
             flex: 1, paddingVertical: 7, borderRadius: radius.pill, alignItems: "center",
@@ -241,6 +352,7 @@ function DayGrid({ value, onChange }: { value: number; onChange: (d: number) => 
           return (
             <Pressable
               key={d}
+              accessibilityLabel={`Day ${d}`}
               onPress={() => { Haptics.selectionAsync(); onChange(d); }}
               style={{
                 width: 40, height: 34, borderRadius: radius.chip, ...CONTINUOUS,

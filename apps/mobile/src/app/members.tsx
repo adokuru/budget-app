@@ -15,7 +15,7 @@ import { space as sp, radius, CONTINUOUS, tint } from "@/theme/tokens";
 
 export default function MembersSheet() {
   const { color, type } = useTheme();
-  const { spaceId, space: current } = useSpace();
+  const { spaceId, space: current, canEdit } = useSpace();
   const { user } = useAuth();
   const [members, setMembers] = useState<Member[] | null>(null);
   const [code, setCode] = useState<string | null>(null);
@@ -127,7 +127,7 @@ export default function MembersSheet() {
 
       {error && <Text selectable style={{ ...type.rowSub, color: color.danger }}>{error}</Text>}
 
-      {code ? (
+      {canEdit && (code ? (
         <View
           style={{
             backgroundColor: color.surfaceStrong, borderRadius: radius.card, ...CONTINUOUS,
@@ -168,7 +168,7 @@ export default function MembersSheet() {
             </Text>
           )}
         </Pressable>
-      )}
+      ))}
     </ScrollView>
   );
 }

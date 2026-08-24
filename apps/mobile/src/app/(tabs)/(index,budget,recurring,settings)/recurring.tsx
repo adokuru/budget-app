@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
@@ -24,7 +24,7 @@ import { space, GUTTER, radius, CONTINUOUS } from "@/theme/tokens";
 
 export default function RecurringScreen() {
   const { color, type } = useTheme();
-  const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
+  const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared, canEdit } = useSpace();
   const { show } = useToast();
   const [pending, setPending] = useState<PendingConfirmation[]>([]);
 
@@ -42,7 +42,11 @@ export default function RecurringScreen() {
     setPending(await runRecurring(spaceId, baseCurrency, rates));
   }, [spaceId, baseCurrency, rates]);
 
-  useEffect(() => { void refresh(); }, [refresh, rules.length]);
+  const rulesRevision = rules.map((rule) => [
+    rule.id, rule.active, rule.kind, rule.categoryId, rule.amountMinor, rule.freq,
+    rule.dayOfMonth, rule.weekday, rule.startOn.getTime(), rule.lastRunAt?.getTime(), rule.autoPost,
+  ].join(":")).join("|");
+  useEffect(() => { void refresh(); }, [refresh, rulesRevision]);
 
   const toDisplay = (m: number, from = baseCurrency) =>
     from === displayCurrency ? m : convertMinor(m, from, displayCurrency, rates);
@@ -62,7 +66,9 @@ export default function RecurringScreen() {
 
   const outgoings = rules.filter((r) => r.kind === "expense");
   const incomes = rules.filter((r) => r.kind === "income");
-  const commitment = sumMinor(outgoings.map((r) => r.amountMinor));
+  const activeOutgoings = outgoings.filter((rule) => rule.active);
+  const activeIncomes = incomes.filter((rule) => rule.active);
+  const commitment = sumMinor(activeOutgoings.map((r) => r.amountMinor));
 
   return (
     <ScrollView
@@ -76,12 +82,12 @@ export default function RecurringScreen() {
         <Text style={{ ...type.eyebrow, marginBottom: space.sm }}>Monthly bills</Text>
         <Amt minor={toDisplay(commitment)} currency={displayCurrency} size="xl" />
         <Text style={{ ...type.meta, marginTop: space.sm }}>
-          {outgoings.length} {outgoings.length === 1 ? "payment" : "payments"} scheduled
+          {activeOutgoings.length} {activeOutgoings.length === 1 ? "payment" : "payments"} scheduled
         </Text>
       </SectionCard>
 
       {/* Anything due that needs a yes or no gets asked first. */}
-      {pending.length > 0 && (
+      {canEdit && pending.length > 0 && (
         <>
           <Label>Needs confirmation</Label>
           <SectionCard>
@@ -140,7 +146,7 @@ export default function RecurringScreen() {
             symbol="🔁"
             title="No recurring items"
             body="Add regular income and bills, such as salary, rent and subscriptions. For income, Kobo Tracker can ask you before adding it."
-            action={{ label: "Add one", href: "/recurring-rule" }}
+            action={canEdit ? { label: "Add one", href: "/recurring-rule" } : undefined}
           />
         </SectionCard>
       ) : (
@@ -165,13 +171,13 @@ export default function RecurringScreen() {
           )}
 
           <Label
-            action={
+            action={canEdit ? (
               <Link href="/recurring-rule" asChild>
                 <Pressable hitSlop={10}>
                   <Text style={type.action}>Add</Text>
                 </Pressable>
               </Link>
-            }
+            ) : undefined}
           >
             Upcoming
           </Label>
@@ -197,7 +203,7 @@ export default function RecurringScreen() {
               <Text style={type.meta}>Expected after bills</Text>
               <Text style={{ ...type.body, fontWeight: "700", color: color.positive }}>
                 {formatWhole(
-                  toDisplay(sumMinor(incomes.map((r) => r.amountMinor)) - commitment),
+                  toDisplay(sumMinor(activeIncomes.map((r) => r.amountMinor)) - commitment),
                   displayCurrency
                 )}{" "}
                 left
@@ -219,8 +225,9 @@ function RuleRow({
   currency: Parameters<typeof Amt>[0]["currency"];
 }) {
   const { color, type } = useTheme();
+  const { canEdit } = useSpace();
   const isIncome = rule.kind === "income";
-  return (
+  const content = (
     <Row>
       <EmojiPlain glyph={emoji || FALLBACK_EMOJI} />
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -231,7 +238,7 @@ function RuleRow({
             freq: rule.freq, dayOfMonth: rule.dayOfMonth, weekday: rule.weekday,
             interval: rule.interval, startOn: rule.startOn.getTime(),
           })}
-          {rule.autoPost ? "" : " · asks first"}
+          {!rule.active ? " · Paused" : rule.autoPost ? "" : " · asks first"}
         </Text>
       </View>
       <View style={{ alignItems: "flex-end" }}>
@@ -246,4 +253,12 @@ function RuleRow({
       </View>
     </Row>
   );
+  return canEdit ? (
+    <Pressable
+      accessibilityLabel={`Edit recurring item ${rule.label}${rule.active ? "" : ", Paused"}`}
+      onPress={() => router.push({ pathname: "/recurring-rule", params: { id: rule.id } })}
+    >
+      {content}
+    </Pressable>
+  ) : content;
 }

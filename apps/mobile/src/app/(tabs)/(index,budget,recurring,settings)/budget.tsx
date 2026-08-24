@@ -19,7 +19,7 @@ import { space, CATEGORY_COLORS } from "@/theme/tokens";
 
 export default function BudgetScreen() {
   const { color, type } = useTheme();
-  const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
+  const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared, canEdit } = useSpace();
   const since = useMemo(() => monthStart().getTime(), []);
 
   const txns = useQuery<Transaction>(
@@ -112,19 +112,19 @@ export default function BudgetScreen() {
             symbol="🎯"
             title="No budgets set"
             body="Set a monthly spending limit for a category, such as ₦200,000 for food. Kobo Tracker will show what you have left."
-            action={{ label: "Set a budget", href: "/budget-editor" }}
+            action={canEdit ? { label: "Set a budget", href: "/budget-editor" } : undefined}
           />
         </SectionCard>
       ) : (
         <>
           <Label
-            action={
+            action={canEdit ? (
               <Link href="/budget-editor" asChild>
                 <Pressable hitSlop={10}>
                   <Text style={type.action}>Edit</Text>
                 </Pressable>
               </Link>
-            }
+            ) : undefined}
           >
             Categories
           </Label>

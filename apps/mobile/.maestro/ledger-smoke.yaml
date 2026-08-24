@@ -1,0 +1,174 @@
+appId: com.davidadokuru.kobo
+name: Ledger correction and recurring management smoke test
+tags:
+  - local
+  - ios
+  - smoke
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+
+- runFlow:
+    when:
+      visible: "Start planning"
+    commands:
+      - tapOn: "Start planning"
+- runFlow:
+    when:
+      visible: "Don't have an account? Create one"
+    commands:
+      - tapOn: "Don't have an account? Create one"
+- extendedWaitUntil:
+    visible: "Create your account."
+    timeout: 60000
+- tapOn:
+    id: "field-name"
+- inputText: "Kobo Smoke"
+- tapOn:
+    id: "field-email"
+- inputText: "${E2E_EMAIL}"
+- tapOn: "Show password"
+- tapOn:
+    id: "field-password"
+- inputText: "${E2E_PASSWORD}"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: ".*(AVAILABLE THIS MONTH|LEFT TO SPEND).*"
+    timeout: 60000
+
+# Add an expense.
+- tapOn: "Add entry"
+- tapOn: "Enter 5"
+- tapOn: "Enter 0"
+- tapOn: "Enter 0"
+- tapOn: "Enter 0"
+- tapOn: "Choose category"
+- tapOn: "Select Food category"
+- tapOn:
+    id: "entry-note"
+- inputText: "Smoke original"
+- pressKey: Enter
+- tapOn: "Save entry"
+- assertVisible: "Edit Smoke original"
+
+# Open this month's full history and correct the entry.
+- tapOn: "View all"
+- assertVisible: "Transactions"
+- assertVisible: "Edit Smoke original"
+- tapOn: "Edit Smoke original"
+- tapOn:
+    text: "Delete amount digit"
+    repeat: 4
+- tapOn: "Enter 7"
+- tapOn: "Enter 5"
+- tapOn: "Enter 0"
+- tapOn: "Enter 0"
+- tapOn:
+    id: "entry-note"
+- eraseText
+- inputText: "Smoke corrected"
+- pressKey: Enter
+- tapOn: "Choose category"
+- tapOn: "Select Transport category"
+- tapOn: "Entry date"
+- evalScript: >-
+    ${var d = new Date(Date.now() - 86400000);
+      var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      output.yesterday = days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];}
+- tapOn: "${output.yesterday}"
+- tapOn: "dismiss pop-up"
+- tapOn: "Save entry changes"
+- assertVisible: "Edit Smoke corrected"
+
+# Relaunch proves the correction was persisted, then remove it from both views.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Edit Smoke corrected"
+    timeout: 15000
+- tapOn: "View all"
+- tapOn: "Edit Smoke corrected"
+- scrollUntilVisible:
+    element:
+      text: "Delete entry"
+    direction: DOWN
+- tapOn: "Delete entry"
+- tapOn: "Confirm deletion"
+- assertNotVisible: "Edit Smoke corrected"
+- tapOn:
+    id: "BackButton"
+- assertNotVisible: "Edit Smoke corrected"
+
+# Create, edit, pause, resume, and delete a recurring rule.
+- tapOn: "Recurring"
+- tapOn: "Add one"
+- tapOn: "Select Food category"
+- scrollUntilVisible:
+    element:
+      text: "Enter 0"
+    direction: DOWN
+- tapOn: "Enter 1"
+- tapOn: "Enter 5"
+- tapOn: "Enter 0"
+- tapOn: "Enter 0"
+- tapOn: "Save recurring item"
+- assertVisible: "Edit recurring item Food"
+- tapOn: "Edit recurring item Food"
+- tapOn: "Weekly"
+- tapOn: "Mon"
+- tapOn: "Select Bills & PHCN category"
+- scrollUntilVisible:
+    element:
+      text: "Delete amount digit"
+    direction: DOWN
+- tapOn:
+    text: "Delete amount digit"
+    repeat: 4
+- tapOn: "Enter 2"
+- tapOn: "Enter 0"
+- tapOn: "Enter 0"
+- tapOn: "Enter 0"
+- tapOn: "Save recurring item"
+- assertVisible: "Edit recurring item Bills & PHCN"
+
+- tapOn: "Edit recurring item Bills & PHCN"
+- scrollUntilVisible:
+    element:
+      text: "Pause recurring item"
+    direction: DOWN
+- tapOn: "Pause recurring item"
+- assertVisible: "Edit recurring item Bills & PHCN, Paused"
+- tapOn: "Edit recurring item Bills & PHCN, Paused"
+- scrollUntilVisible:
+    element:
+      text: "Resume recurring item"
+    direction: DOWN
+- tapOn: "Resume recurring item"
+- tapOn: "Edit recurring item Bills & PHCN"
+- scrollUntilVisible:
+    element:
+      text: "Delete recurring item"
+    direction: DOWN
+- tapOn: "Delete recurring item"
+- tapOn: "Confirm deletion"
+- assertNotVisible: "Bills & PHCN"
+
+# Cleanup keeps repeated local runs isolated.
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element:
+      text: "Delete account"
+    direction: DOWN
+- tapOn: "Delete account"
+- tapOn: "Confirm deletion"
+- extendedWaitUntil:
+    visible: ".*(Know what you can spend|Welcome back).*"
+    timeout: 15000

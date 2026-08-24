@@ -19,7 +19,9 @@ export function Keypad({ onKey }: { onKey: (k: AmountKey) => void }) {
         <Pressable
           key={k}
           accessibilityRole="button"
-          accessibilityLabel={k === "del" ? "Delete" : k}
+          accessibilityLabel={k === "del"
+            ? "Delete amount digit"
+            : k === "." ? "Enter decimal point" : `Enter ${k}`}
           onPress={() => {
             Haptics.selectionAsync();
             onKey(k);

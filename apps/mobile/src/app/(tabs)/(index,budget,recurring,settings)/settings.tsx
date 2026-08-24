@@ -20,7 +20,7 @@ const APPEARANCE_OPTIONS = [
 export default function SettingsScreen() {
   const { color, type } = useTheme();
   const {
-    space: current, isShared, baseCurrency, displayCurrency,
+    space: current, isShared, baseCurrency, displayCurrency, canEdit,
   } = useSpace();
   const { user } = useAuth();
   const prefs = usePrefs();
@@ -115,13 +115,6 @@ export default function SettingsScreen() {
           value={prefs.confirmIncome}
           onChange={prefs.setConfirmIncome}
         />
-        <Rule full />
-        <SettingsToggleRow
-          label="Sync on app open"
-          sub="When off, pull down to sync changes."
-          value={prefs.autoSync}
-          onChange={prefs.setAutoSync}
-        />
       </SectionCard>
 
       <Label>Appearance</Label>
@@ -158,13 +151,17 @@ export default function SettingsScreen() {
         System uses your phone&apos;s appearance. This setting only applies to this phone.
       </Text>
 
-      {/* ── Planning ── */}
-      <Label>Planning</Label>
-      <SectionCard>
-        <SettingsNavRow label="Add a recurring item" href="/recurring-rule" />
-        <Rule full />
-        <SettingsNavRow label="Set a budget" href="/budget-editor" />
-      </SectionCard>
+      {canEdit && (
+        <>
+          {/* ── Planning ── */}
+          <Label>Planning</Label>
+          <SectionCard>
+            <SettingsNavRow label="Add a recurring item" href="/recurring-rule" />
+            <Rule full />
+            <SettingsNavRow label="Set a budget" href="/budget-editor" />
+          </SectionCard>
+        </>
+      )}
 
       <AccountSection />
 
@@ -185,7 +182,7 @@ function AccountSection() {
       "This removes your account and personal data permanently. Shared spaces you do not own stay with their other members. This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => void deleteAccount() },
+        { text: "Confirm deletion", style: "destructive", onPress: () => void deleteAccount() },
       ]
     );
   };

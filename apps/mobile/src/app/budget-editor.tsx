@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -20,7 +20,7 @@ import { space } from "@/theme/tokens";
 
 export default function BudgetEditorSheet() {
   const { color, type } = useTheme();
-  const { spaceId, displayCurrency } = useSpace();
+  const { spaceId, displayCurrency, canEdit } = useSpace();
   const { show } = useToast();
   const periodStart = useMemo(() => monthStart().getTime(), []);
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -38,7 +38,11 @@ export default function BudgetEditorSheet() {
   );
 
   const minor = toMinor(raw || "0", displayCurrency);
-  const canSave = minor > 0 && categoryId !== null;
+  const canSave = canEdit && minor > 0 && categoryId !== null;
+
+  useEffect(() => {
+    if (!canEdit) router.back();
+  }, [canEdit]);
 
   async function save() {
     if (!canSave) return;
@@ -76,6 +80,8 @@ export default function BudgetEditorSheet() {
     syncQuietly();
     router.back();
   }
+
+  if (!canEdit) return null;
 
   return (
     <ScrollView

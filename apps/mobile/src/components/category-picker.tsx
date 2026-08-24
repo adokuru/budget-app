@@ -32,6 +32,7 @@ export function CategoryPicker({
           <Pressable
             key={c.id}
             accessibilityRole="button"
+            accessibilityLabel={`Select ${c.name} category`}
             accessibilityState={{ selected: active }}
             onPress={() => {
               Haptics.selectionAsync();

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  rate, convertMinor, roundHalfAwayFromZero, snapshotRate,
+  rate, convertMinor, convertMinorAtRate, roundHalfAwayFromZero, snapshotRate,
   MissingRateError, type RateTable,
 } from "../src/fx.ts";
 
@@ -81,6 +81,20 @@ test("snapshotRate freezes history against later rate moves", () => {
   assert.equal(rate("USD", "NGN", later), 2100);
   // the stored snapshot is unaffected — this is the whole point
   assert.equal(baseMinor, 15_400_000);
+});
+
+test("convertMinorAtRate preserves a transaction's frozen rate", () => {
+  assert.equal(convertMinorAtRate(12_500, "USD", "NGN", 1540), 19_250_000);
+  assert.equal(convertMinorAtRate(12_500, "NGN", "NGN", 1), 12_500);
+});
+
+test("convertMinorAtRate validates the stored amount and rate", () => {
+  assert.throws(() => convertMinorAtRate(10.5, "USD", "NGN", 1540), /integer/);
+  assert.throws(() => convertMinorAtRate(1000, "USD", "NGN", 0), /positive/);
+  assert.throws(
+    () => convertMinorAtRate(Number.MAX_SAFE_INTEGER, "USD", "NGN", 1540),
+    /safe integer/
+  );
 });
 
 test("convertMinor rejects a non-integer amount", () => {

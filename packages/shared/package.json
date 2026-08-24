@@ -15,5 +15,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "node --test 'test/*.test.ts'"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1"
   }
 }

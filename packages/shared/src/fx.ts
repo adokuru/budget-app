@@ -78,6 +78,25 @@ export function convertMinor(
   return roundHalfAwayFromZero(minor * rate(from, to, table) * scale);
 }
 
+/** Recalculate a stored amount without changing its historical FX snapshot. */
+export function convertMinorAtRate(
+  minor: number,
+  from: Currency,
+  to: Currency,
+  frozenRate: number
+): number {
+  assertMinor(minor);
+  if (!Number.isFinite(frozenRate) || frozenRate <= 0) {
+    throw new Error(`frozen rate must be positive, got ${String(frozenRate)}`);
+  }
+  if (from === to) return minor;
+
+  const scale = 10 ** (CURRENCIES[to].decimals - CURRENCIES[from].decimals);
+  const converted = roundHalfAwayFromZero(minor * frozenRate * scale);
+  assertMinor(converted);
+  return converted;
+}
+
 /**
  * Half away from zero — what people expect of money, and symmetric about
  * zero so a refund rounds to the mirror of its charge. Math.round is not:

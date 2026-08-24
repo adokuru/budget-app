@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { ConfigService } from "@nestjs/config";
 import * as schema from "../src/db/schema";
 import type { Db } from "../src/db/db.module";
@@ -148,6 +148,113 @@ test("the server, not the client, decides who authored a row", async () => {
 
   const txn = (await sync.pull(a, 0)).changes.transactions!.created[0]!;
   assert.equal(txn.created_by, a, "a client must not be able to forge authorship");
+});
+
+test("a member can correct a shared transaction without taking authorship", async () => {
+  const owner = await newUser("Owner");
+  const member = await newUser("Member");
+  const family = await spaces.create(owner, "Family", "NGN");
+  const { code } = await spaces.createInvite(owner, family.id);
+  await spaces.join(member, code);
+
+  const catId = (await sync.pull(owner, 0)).changes.categories!.created
+    .find((c) => c.space_id === family.id)!.id as string;
+  const txnId = randomUUID();
+  await sync.push(owner, {
+    transactions: {
+      created: [{
+        id: txnId, space_id: family.id, category_id: catId,
+        kind: "expense", amount_minor: 1000, currency: "NGN",
+        rate_to_base: 1, base_minor: 1000,
+        occurred_at: new Date("2026-08-22T10:00:00Z"),
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0);
+
+  const memberPull = await sync.pull(member, 0);
+  const row = memberPull.changes.transactions!.created.find((t) => t.id === txnId)!;
+  await sync.push(member, {
+    transactions: {
+      created: [], deleted: [],
+      updated: [{ ...row, amount_minor: 2500, base_minor: 2500, created_by: member }],
+    },
+  }, memberPull.timestamp);
+
+  const corrected = (await sync.pull(owner, 0)).changes.transactions!.created
+    .find((t) => t.id === txnId)!;
+  assert.equal(corrected.amount_minor, 2500);
+  assert.equal(corrected.created_by, owner);
+});
+
+test("viewer memberships cannot create, update, or delete financial rows", async () => {
+  const owner = await newUser("Owner");
+  const viewer = await newUser("Viewer");
+  const family = await spaces.create(owner, "Family", "NGN");
+  const { code } = await spaces.createInvite(owner, family.id);
+  await spaces.join(viewer, code);
+  await db.update(schema.memberships).set({ role: "viewer" }).where(and(
+    eq(schema.memberships.userId, viewer),
+    eq(schema.memberships.spaceId, family.id)
+  ));
+
+  const catId = (await sync.pull(owner, 0)).changes.categories!.created
+    .find((c) => c.space_id === family.id)!.id as string;
+  const txnId = randomUUID();
+  await sync.push(owner, {
+    transactions: {
+      created: [{
+        id: txnId, space_id: family.id, category_id: catId,
+        kind: "expense", amount_minor: 1000, currency: "NGN",
+        rate_to_base: 1, base_minor: 1000,
+        occurred_at: new Date("2026-08-22T10:00:00Z"),
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0);
+
+  const viewerPull = await sync.pull(viewer, 0);
+  const row = viewerPull.changes.transactions!.created.find((t) => t.id === txnId)!;
+  const denied = /read-only/;
+
+  await assert.rejects(() => sync.push(viewer, {
+    transactions: {
+      created: [{ ...row, id: randomUUID() }], updated: [], deleted: [],
+    },
+  }, viewerPull.timestamp), denied);
+  await assert.rejects(() => sync.push(viewer, {
+    transactions: {
+      created: [], updated: [{ ...row, amount_minor: 2000 }], deleted: [],
+    },
+  }, viewerPull.timestamp), denied);
+  await assert.rejects(() => sync.push(viewer, {
+    transactions: { created: [], updated: [], deleted: [txnId] },
+  }, viewerPull.timestamp), denied);
+});
+
+test("a user cannot delete a guessed record outside their spaces", async () => {
+  const owner = await newUser("Owner");
+  const stranger = await newUser("Stranger");
+  const family = await spaces.create(owner, "Family", "NGN");
+  const catId = (await sync.pull(owner, 0)).changes.categories!.created
+    .find((c) => c.space_id === family.id)!.id as string;
+  const txnId = randomUUID();
+
+  await sync.push(owner, {
+    transactions: {
+      created: [{
+        id: txnId, space_id: family.id, category_id: catId,
+        kind: "expense", amount_minor: 1000, currency: "NGN",
+        rate_to_base: 1, base_minor: 1000,
+        occurred_at: new Date("2026-08-22T10:00:00Z"),
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0);
+
+  await assert.rejects(() => sync.push(stranger, {
+    transactions: { created: [], updated: [], deleted: [txnId] },
+  }, 0), /Not a member/);
 });
 
 test("pushing into a space you do not belong to is refused", async () => {

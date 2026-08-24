@@ -1,4 +1,4 @@
-import { Inject, Injectable, ConflictException } from "@nestjs/common";
+import { ConflictException, ForbiddenException, Inject, Injectable } from "@nestjs/common";
 import { and, eq, getTableColumns, isNull, sql } from "drizzle-orm";
 import { SYNC_SCHEMA, SYNC_TABLE_NAMES, type SyncTableName } from "@budget/shared";
 import { DB, type Db } from "../db/db.module";
@@ -162,13 +162,13 @@ export class SyncService {
   async push(userId: string, changes: Changes, lastPulledAt: number): Promise<void> {
     const since = new Date(lastPulledAt || 0);
 
-    const allowed = new Set(
+    const roles = new Map(
       (
         await this.db
-          .select({ spaceId: memberships.spaceId })
+          .select({ spaceId: memberships.spaceId, role: memberships.role })
           .from(memberships)
           .where(and(eq(memberships.userId, userId), isNull(memberships.revokedAt)))
-      ).map((m) => m.spaceId)
+      ).map((m) => [m.spaceId, m.role])
     );
 
     await this.db.transaction(async (tx) => {
@@ -178,16 +178,26 @@ export class SyncService {
         // The client cache of other people is read-only.
         if (table === "users" || table === "memberships") continue;
 
-        for (const row of [...batch.created, ...batch.updated]) {
+        for (const row of batch.created) {
           const spaceId = String(table === "spaces" ? row.id : row.space_id);
-          if (!allowed.has(spaceId)) {
-            throw new ConflictException(`Not a member of space ${spaceId}`);
+          this.assertCanWrite(roles.get(spaceId), table, spaceId);
+          await this.assertNotStale(tx, table, String(row.id), since);
+          await this.upsert(tx, table, row, userId, true);
+        }
+
+        for (const row of batch.updated) {
+          const spaceId = await this.spaceIdFor(tx, table, String(row.id));
+          this.assertCanWrite(roles.get(spaceId), table, spaceId);
+          if (table !== "spaces" && String(row.space_id) !== spaceId) {
+            throw new ForbiddenException("A synced record cannot move between spaces");
           }
           await this.assertNotStale(tx, table, String(row.id), since);
-          await this.upsert(tx, table, row, userId);
+          await this.upsert(tx, table, row, userId, false);
         }
 
         for (const id of batch.deleted) {
+          const spaceId = await this.spaceIdFor(tx, table, id);
+          this.assertCanWrite(roles.get(spaceId), table, spaceId);
           await this.assertNotStale(tx, table, id, since);
           await tx.execute(
             sql`update ${sql.identifier(table)}
@@ -197,6 +207,30 @@ export class SyncService {
         }
       }
     });
+  }
+
+  private assertCanWrite(
+    role: "owner" | "member" | "viewer" | undefined,
+    table: SyncTableName,
+    spaceId: string
+  ): void {
+    const allowed = table === "spaces" ? role === "owner" : role === "owner" || role === "member";
+    if (!allowed) {
+      throw new ForbiddenException(
+        role ? "Viewer memberships are read-only" : `Not a member of space ${spaceId}`
+      );
+    }
+  }
+
+  private async spaceIdFor(tx: Db, table: SyncTableName, id: string): Promise<string> {
+    const column = table === "spaces" ? sql`id` : sql`space_id`;
+    const rows = (
+      await tx.execute(
+        sql`select ${column} as space_id from ${sql.identifier(table)} where id = ${id}`
+      )
+    ).rows as { space_id: string }[];
+    if (!rows[0]) throw new ConflictException("The record no longer exists");
+    return rows[0].space_id;
   }
 
   /**
@@ -224,15 +258,24 @@ export class SyncService {
     }
   }
 
-  private async upsert(tx: Db, table: SyncTableName, row: Row, userId: string): Promise<void> {
+  private async upsert(
+    tx: Db,
+    table: SyncTableName,
+    row: Row,
+    userId: string,
+    created: boolean
+  ): Promise<void> {
     const clean: Row = { ...row };
     for (const key of Object.keys(clean)) {
       if (key.startsWith("_") || NEVER_SEND.has(key)) delete clean[key];
     }
-    // Always stamp authorship from the token, whether or not the client sent
-    // the field. Trusting a client-supplied created_by would let anyone
-    // attribute their spending to another family member.
-    if (HAS_AUTHOR.has(table)) clean.created_by = userId;
+    // The token decides authorship at creation. Updates preserve the original
+    // author even when another member corrects a shared entry.
+    if (HAS_AUTHOR.has(table)) {
+      if (created) clean.created_by = userId;
+      else delete clean.created_by;
+    }
+    if (!created) delete clean.created_at;
 
     // WatermelonDB sends dates as epoch millis. Postgres cannot parse a bare
     // number as a timestamptz, so every push with a date failed until this
@@ -250,6 +293,20 @@ export class SyncService {
     clean.updated_at = new Date();
 
     const cols = Object.keys(clean);
+    if (!created) {
+      const id = String(clean.id);
+      const updates = sql.join(
+        cols.filter((c) => c !== "id").map(
+          (c) => sql`${sql.identifier(c)} = ${clean[c]}`
+        ),
+        sql`, `
+      );
+      await tx.execute(
+        sql`update ${sql.identifier(table)} set ${updates} where id = ${id}`
+      );
+      return;
+    }
+
     const identifiers = sql.join(cols.map((c) => sql.identifier(c)), sql`, `);
     const values = sql.join(cols.map((c) => sql`${clean[c]}`), sql`, `);
     const updates = sql.join(

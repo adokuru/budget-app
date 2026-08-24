@@ -68,20 +68,16 @@ async function tryRefresh(): Promise<boolean> {
   const { refresh } = await readTokens();
   if (!refresh) return false;
 
-  try {
-    const res = await fetch(`${API_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ refreshToken: refresh, deviceId: deviceId() }),
-    });
-    if (!res.ok) return false;
+  const res = await fetch(`${API_URL}/auth/refresh`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ refreshToken: refresh, deviceId: deviceId() }),
+  });
+  if (!res.ok) return false;
 
-    const session = (await res.json()) as { accessToken: string; refreshToken: string };
-    await saveTokens(session.accessToken, session.refreshToken);
-    return true;
-  } catch {
-    return false;
-  }
+  const session = (await res.json()) as { accessToken: string; refreshToken: string };
+  await saveTokens(session.accessToken, session.refreshToken);
+  return true;
 }
 
 function safeJson(text: string): unknown {

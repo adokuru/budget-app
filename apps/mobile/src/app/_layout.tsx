@@ -151,6 +151,13 @@ function Gate() {
               title: "Widgets",
             }}
           />
+          <Stack.Screen
+            name="transactions"
+            options={{
+              ...detailHeader,
+              title: "Transactions",
+            }}
+          />
           {/*
             Sheets are routes, not components: native presentation, native
             detents, native dismiss gesture. No sheet library in the app.

@@ -1,12 +1,17 @@
 import { createContext, use, useEffect, useState, type ReactNode } from "react";
+import { Q } from "@nozbe/watermelondb";
 import { isCurrency, type Currency, type RateTable } from "@budget/shared";
-import { firstSpace } from "@/db/seed";
+import { database } from "@/db";
+import { useQuery } from "@/db/hooks";
 import { View } from "react-native";
-import type { Space } from "@/db/models";
+import type { Membership, Space } from "@/db/models";
 import { useTheme } from "@/hooks/use-theme";
 import { loadRates } from "@/lib/rates";
 import { readJson, writeJson } from "@/lib/store";
 import { runRecurring } from "@/lib/recurring-engine";
+import { currentUserId } from "@/lib/session";
+
+type SpaceRole = Membership["role"];
 
 type SpaceContextValue = {
   space: Space;
@@ -14,6 +19,8 @@ type SpaceContextValue = {
   baseCurrency: Currency;
   /** True for a shared space, which changes the header chip and shows authors. */
   isShared: boolean;
+  role: SpaceRole;
+  canEdit: boolean;
   /** What amounts are displayed in. Defaults to the space's base currency. */
   displayCurrency: Currency;
   setDisplayCurrency: (c: Currency) => void;
@@ -41,6 +48,19 @@ export function SpaceProvider({ children }: { children: ReactNode }) {
   const [spaceId, setSpaceIdState] = useState<string | null>(readActiveSpaceId());
   const [displayCurrency, setDisplayCurrency] = useState<Currency | null>(null);
   const [rates, setRates] = useState<RateTable>({ perPivot: {} });
+  const spaces = useQuery<Space>(
+    () => database.get<Space>("spaces").query(Q.sortBy("created_at", Q.asc)),
+    []
+  );
+  const selectedSpaceId = spaceId ?? spaces[0]?.id ?? "";
+  const activeMembership = useQuery<Membership>(
+    () => database.get<Membership>("memberships").query(
+      Q.where("space_id", selectedSpaceId),
+      Q.where("user_id", currentUserId()),
+      Q.take(1)
+    ),
+    [selectedSpaceId]
+  )[0];
 
   const refreshRates = async (force = false) => setRates(await loadRates(force));
 
@@ -49,9 +69,14 @@ export function SpaceProvider({ children }: { children: ReactNode }) {
     (async () => {
       // Spaces arrive from the server on first sync; the app does not seed
       // them locally, so there is exactly one source of truth for membership.
-      const s = await firstSpace(spaceId);
+      const s = spaces.find((item) => item.id === spaceId) ?? spaces[0];
+      if (!s) return;
       const r = await loadRates();
-      if (cancelled || !s) return;
+      if (cancelled) return;
+      if (spaceId !== s.id) {
+        writeActiveSpaceId(s.id);
+        setSpaceIdState(s.id);
+      }
       setSpace(s);
       const savedCurrency = readPreferences().displayCurrencyBySpace?.[s.id];
       setDisplayCurrency(savedCurrency && isCurrency(savedCurrency) ? savedCurrency : s.baseCurrency);
@@ -64,9 +89,9 @@ export function SpaceProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [spaceId]);
+  }, [spaceId, spaces]);
 
-  if (!space || !displayCurrency) return <SpaceLoading />;
+  if (!space || !displayCurrency || !activeMembership) return <SpaceLoading />;
 
   return (
     <SpaceContext
@@ -75,6 +100,8 @@ export function SpaceProvider({ children }: { children: ReactNode }) {
         spaceId: space.id,
         baseCurrency: space.baseCurrency,
         isShared: space.name.toLowerCase() !== "personal",
+        role: activeMembership.role,
+        canEdit: activeMembership.role !== "viewer",
         displayCurrency,
         setDisplayCurrency: (currency) => {
           setDisplayCurrency(currency);

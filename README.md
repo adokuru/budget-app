@@ -118,6 +118,14 @@ pnpm typecheck
 pnpm test
 ```
 
+Run the tracked iOS ledger smoke flow against the local API with a fresh email address:
+
+```bash
+E2E_EMAIL="kobo-smoke-$(date +%s)@example.com" \
+E2E_PASSWORD="LocalSmokePassphrase123" \
+pnpm --filter @budget/mobile smoke:ios
+```
+
 The API integration tests truncate every table in `TEST_DATABASE_URL`. Point that variable only at a dedicated test database.
 
 ## Open work
