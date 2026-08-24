@@ -66,7 +66,7 @@ export default function RecurringScreen() {
 
   return (
     <ScrollView
-      contentInsetAdjustmentBehavior="never"
+      contentInsetAdjustmentBehavior="automatic"
       style={{ backgroundColor: color.canvas }}
       contentContainerStyle={{ paddingBottom: 140 }}
     >

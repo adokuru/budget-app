@@ -110,7 +110,7 @@ function HomeScreen() {
   return (
     <>
     <ScrollView
-      contentInsetAdjustmentBehavior="never"
+      contentInsetAdjustmentBehavior="automatic"
       style={{ backgroundColor: color.canvas }}
       contentContainerStyle={{ paddingBottom: 140 }}
     >
