@@ -24,12 +24,11 @@ export const BudgetProgressWidget = createWidget<BudgetWidgetProps>(
   (props, environment) => {
     "widget";
     const compact = environment.widgetFamily === "systemSmall";
-    const dark = environment.colorScheme === "dark";
-    const background = dark ? "#11172A" : "#FAFAF8";
-    const primary = dark ? "#F5F7FF" : "#11162A";
-    const secondary = dark ? "#C4CAD8" : "#555555";
-    const faint = dark ? "#9AA3B8" : "#777777";
-    const positive = dark ? "#3AD995" : "#008A50";
+    const background = "#111A3A";
+    const primary = "#F5F7FF";
+    const secondary = "#C4CAD8";
+    const faint = "#9AA3B8";
+    const positive = "#D8FF3E";
     return (
       <VStack
         alignment="leading"

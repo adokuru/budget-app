@@ -1,7 +1,8 @@
 import {
   pgTable, text, timestamp, integer, doublePrecision, boolean,
-  uniqueIndex, index, primaryKey,
+  uniqueIndex, index, primaryKey, check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 /**
  * IDs are strings generated client-side by WatermelonDB. Postgres must accept
@@ -168,6 +169,44 @@ export const budgets = pgTable(
   (t) => [uniqueIndex("budgets_space_cat_period_key").on(t.spaceId, t.categoryId, t.periodStart)]
 );
 
+export const goals = pgTable(
+  "goals",
+  {
+    id: id(),
+    spaceId: text("space_id").notNull().references(() => spaces.id),
+    createdBy: text("created_by").notNull().references(() => users.id),
+    name: text("name").notNull(),
+    targetMinor: integer("target_minor").notNull(),
+    currency: text("currency").notNull(),
+    dueAt: timestamp("due_at", { withTimezone: true }),
+    ...stamps,
+  },
+  (t) => [
+    index("goals_space_due_idx").on(t.spaceId, t.dueAt),
+    check("goals_target_positive", sql`${t.targetMinor} > 0`),
+    check("goals_name_not_blank", sql`length(trim(${t.name})) > 0`),
+  ]
+);
+
+export const goalContributions = pgTable(
+  "goal_contributions",
+  {
+    id: id(),
+    spaceId: text("space_id").notNull().references(() => spaces.id),
+    goalId: text("goal_id").notNull().references(() => goals.id),
+    createdBy: text("created_by").notNull().references(() => users.id),
+    amountMinor: integer("amount_minor").notNull(),
+    currency: text("currency").notNull(),
+    contributedAt: timestamp("contributed_at", { withTimezone: true }).notNull(),
+    ...stamps,
+  },
+  (t) => [
+    index("goal_contributions_goal_date_idx").on(t.goalId, t.contributedAt),
+    index("goal_contributions_space_idx").on(t.spaceId),
+    check("goal_contributions_amount_positive", sql`${t.amountMinor} > 0`),
+  ]
+);
+
 export const fxRates = pgTable(
   "fx_rates",
   {
@@ -202,4 +241,5 @@ export const devices = pgTable(
 /** Tables the sync protocol moves, in FK-safe insert order. */
 export const SYNCED = {
   users, spaces, memberships, categories, transactions, recurringRules, budgets,
+  goals, goalContributions,
 } as const;

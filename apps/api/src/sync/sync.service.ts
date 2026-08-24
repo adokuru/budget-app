@@ -1,9 +1,12 @@
 import { ConflictException, ForbiddenException, Inject, Injectable } from "@nestjs/common";
 import { and, eq, getTableColumns, isNull, sql } from "drizzle-orm";
-import { SYNC_SCHEMA, SYNC_TABLE_NAMES, type SyncTableName } from "@budget/shared";
+import {
+  SYNC_SCHEMA, SYNC_TABLE_NAMES, isCurrency, syncTablesForVersion, type SyncTableName,
+} from "@budget/shared";
 import { DB, type Db } from "../db/db.module";
 import {
   users, spaces, memberships, categories, transactions, recurringRules, budgets,
+  goals, goalContributions,
 } from "../db/schema";
 
 type Row = Record<string, unknown>;
@@ -13,6 +16,7 @@ export type PullResult = { changes: Changes; timestamp: number };
 
 const TABLES = {
   users, spaces, memberships, categories, transactions, recurring_rules: recurringRules, budgets,
+  goals, goal_contributions: goalContributions,
 } as const;
 
 /**
@@ -30,7 +34,9 @@ for (const [name, table] of Object.entries(TABLES)) {
 }
 
 /** Tables whose rows record who created them. */
-const HAS_AUTHOR = new Set<SyncTableName>(["transactions", "spaces"]);
+const HAS_AUTHOR = new Set<SyncTableName>([
+  "transactions", "spaces", "goals", "goal_contributions",
+]);
 
 /** Columns that must never leave the server, even on the users table. */
 const NEVER_SEND = new Set(["password_hash", "apple_sub", "google_sub", "deleted_at"]);
@@ -43,7 +49,12 @@ export class SyncService {
    * WatermelonDB's pull contract. Everything is scoped through memberships —
    * the privacy boundary is this query, never a filter on the client.
    */
-  async pull(userId: string, lastPulledAt: number): Promise<PullResult> {
+  async pull(
+    userId: string,
+    lastPulledAt: number,
+    schemaVersion = 1,
+    migrationTables: SyncTableName[] = []
+  ): Promise<PullResult> {
     // One timestamp for the whole pull, taken before reading, so nothing
     // written mid-pull can fall into the gap and be missed forever.
     const timestamp = Date.now();
@@ -59,16 +70,20 @@ export class SyncService {
     const revokedSpaceIds = myMemberships.filter((m) => m.revokedAt).map((m) => m.spaceId);
 
     const changes: Changes = {};
+    const requestedTables = syncTablesForVersion(schemaVersion);
+    const migrating = new Set(migrationTables.filter((table) => requestedTables.includes(table)));
 
-    for (const table of SYNC_TABLE_NAMES) {
-      changes[table] = await this.changesFor(table, userId, activeSpaceIds, since, isFirstPull);
+    for (const table of requestedTables) {
+      changes[table] = await this.changesFor(
+        table, userId, activeSpaceIds, since, isFirstPull || migrating.has(table)
+      );
     }
 
     // Being removed from a space must tombstone that space's rows. The
     // protocol has no other way to say "these are no longer yours", and
     // without it the device keeps a permanent copy of the family's finances.
     if (revokedSpaceIds.length > 0) {
-      await this.appendRevocations(changes, revokedSpaceIds);
+      await this.appendRevocations(changes, revokedSpaceIds, requestedTables);
     }
 
     return { changes, timestamp };
@@ -88,7 +103,7 @@ export class SyncService {
     if (!scope) return empty;
 
     // drizzle's execute() returns a pg QueryResult, not an array.
-    const rows = (await this.db.execute(scope.query(since))).rows as Row[];
+    const rows = (await this.db.execute(scope.query(isFirstPull ? new Date(0) : since))).rows as Row[];
 
     const out: TableChanges = { created: [], updated: [], deleted: [] };
     for (const raw of rows) {
@@ -138,10 +153,14 @@ export class SyncService {
     }
   }
 
-  private async appendRevocations(changes: Changes, revokedSpaceIds: string[]): Promise<void> {
+  private async appendRevocations(
+    changes: Changes,
+    revokedSpaceIds: string[],
+    requestedTables: SyncTableName[]
+  ): Promise<void> {
     const ids = sql.join(revokedSpaceIds.map((s) => sql`${s}`), sql`, `);
 
-    for (const table of SYNC_TABLE_NAMES) {
+    for (const table of requestedTables) {
       if (table === "users") continue;
       const column = table === "spaces" ? sql`id` : sql`space_id`;
       const rows = (
@@ -186,6 +205,9 @@ export class SyncService {
         }
 
         for (const row of batch.updated) {
+          if (table === "goal_contributions") {
+            throw new ConflictException("Goal contributions cannot be edited; delete and add a correction");
+          }
           const spaceId = await this.spaceIdFor(tx, table, String(row.id));
           this.assertCanWrite(roles.get(spaceId), table);
           if (table !== "spaces" && String(row.space_id) !== spaceId) {
@@ -278,6 +300,8 @@ export class SyncService {
     }
     if (!created) delete clean.created_at;
 
+    await this.validateFinancialRow(tx, table, clean, created);
+
     // WatermelonDB sends dates as epoch millis. Postgres cannot parse a bare
     // number as a timestamptz, so every push with a date failed until this
     // ran — the mirror of the coercion the pull side does.
@@ -319,6 +343,54 @@ export class SyncService {
       sql`insert into ${sql.identifier(table)} (${identifiers}) values (${values})
           on conflict (id) do update set ${updates}`
     );
+  }
+
+  private async validateFinancialRow(
+    tx: Db,
+    table: SyncTableName,
+    row: Row,
+    created: boolean
+  ): Promise<void> {
+    if (table === "goals") {
+      const name = String(row.name ?? "").trim();
+      const target = Number(row.target_minor);
+      if (!name || name.length > 60) throw new ConflictException("Goal name must be 1 to 60 characters");
+      if (!Number.isSafeInteger(target) || target <= 0) {
+        throw new ConflictException("Goal target must be a positive amount");
+      }
+      if (!isCurrency(String(row.currency))) throw new ConflictException("Goal currency is invalid");
+      row.name = name;
+
+      if (!created) {
+        const current = (await tx.execute(
+          sql`select currency from goals where id = ${String(row.id)} and deleted_at is null`
+        )).rows as { currency: string }[];
+        if (current[0] && current[0].currency !== row.currency) {
+          throw new ConflictException("A goal's currency cannot be changed");
+        }
+      }
+    }
+
+    if (table === "goal_contributions") {
+      const amount = Number(row.amount_minor);
+      if (!Number.isSafeInteger(amount) || amount <= 0) {
+        throw new ConflictException("Goal contribution must be a positive amount");
+      }
+      if (!isCurrency(String(row.currency))) {
+        throw new ConflictException("Goal contribution currency is invalid");
+      }
+      const goal = (await tx.execute(
+        sql`select space_id, currency from goals
+            where id = ${String(row.goal_id)} and deleted_at is null`
+      )).rows as { space_id: string; currency: string }[];
+      if (!goal[0]) throw new ConflictException("This goal no longer exists");
+      if (goal[0].space_id !== String(row.space_id)) {
+        throw new ForbiddenException("A contribution cannot be moved to another space");
+      }
+      if (goal[0].currency !== row.currency) {
+        throw new ConflictException("Contribution currency must match its goal");
+      }
+    }
   }
 }
 

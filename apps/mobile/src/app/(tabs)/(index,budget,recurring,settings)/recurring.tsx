@@ -10,11 +10,11 @@ import {
 } from "@budget/shared";
 import { database } from "@/db";
 import type { Category, RecurringRule } from "@/db/models";
-import { useQuery } from "@/db/hooks";
+import { useQueryState } from "@/db/hooks";
 import { useSpace } from "@/state/space";
 import { Amt } from "@/components/amt";
 import { AppHeader } from "@/components/app-header";
-import { Rule, Label, EmojiPlain, Row, SectionCard } from "@/components/primitives";
+import { Rule, Label, EmojiPlain, Row, ScreenLoading, SectionCard } from "@/components/primitives";
 import { EmptyState } from "@/components/empty-state";
 import { useToast } from "@/components/toast";
 import { useTheme } from "@/hooks/use-theme";
@@ -28,15 +28,18 @@ export default function RecurringScreen() {
   const { show } = useToast();
   const [pending, setPending] = useState<PendingConfirmation[]>([]);
 
-  const rules = useQuery<RecurringRule>(
+  const ruleState = useQueryState<RecurringRule>(
     () => database.get<RecurringRule>("recurring_rules")
       .query(Q.where("space_id", spaceId), Q.sortBy("next_run_at", Q.asc)),
     [spaceId]
   );
-  const categories = useQuery<Category>(
+  const categoryState = useQueryState<Category>(
     () => database.get<Category>("categories").query(Q.where("space_id", spaceId)),
     [spaceId]
   );
+
+  const rules = ruleState.rows;
+  const categories = categoryState.rows;
 
   const refresh = useCallback(async () => {
     setPending(await runRecurring(spaceId, baseCurrency, rates));
@@ -70,6 +73,15 @@ export default function RecurringScreen() {
   const activeIncomes = incomes.filter((rule) => rule.active);
   const commitment = sumMinor(activeOutgoings.map((r) => r.amountMinor));
 
+  if (ruleState.loading || categoryState.loading) {
+    return (
+      <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ backgroundColor: color.canvas }}>
+        <AppHeader spaceName={current.name} isShared={isShared} />
+        <ScreenLoading label="Loading recurring items" />
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
@@ -78,13 +90,13 @@ export default function RecurringScreen() {
     >
       <AppHeader spaceName={current.name} isShared={isShared} />
 
-      <SectionCard style={{ marginTop: space.sm, padding: space.lg }}>
-        <Text style={{ ...type.eyebrow, marginBottom: space.sm }}>Monthly bills</Text>
-        <Amt minor={toDisplay(commitment)} currency={displayCurrency} size="xl" />
-        <Text style={{ ...type.meta, marginTop: space.sm }}>
+      <View style={{ marginHorizontal: GUTTER, marginTop: space.sm, padding: space.lg, backgroundColor: color.surfaceStrong }}>
+        <Text style={{ ...type.eyebrow, color: color.brandLime, marginBottom: space.sm }}>Monthly bills</Text>
+        <Amt minor={toDisplay(commitment)} currency={displayCurrency} size="xl" tone={color.onStrong} />
+        <Text style={{ ...type.meta, color: "#FFFFFFB8", marginTop: space.sm }}>
           {activeOutgoings.length} {activeOutgoings.length === 1 ? "payment" : "payments"} scheduled
         </Text>
-      </SectionCard>
+      </View>
 
       {/* Anything due that needs a yes or no gets asked first. */}
       {canEdit && pending.length > 0 && (
@@ -198,10 +210,11 @@ export default function RecurringScreen() {
               style={{
                 flexDirection: "row", alignItems: "center", justifyContent: "space-between",
                 paddingHorizontal: GUTTER, paddingVertical: space.lg,
+                backgroundColor: color.brandLime,
               }}
             >
-              <Text style={type.meta}>Expected after bills</Text>
-              <Text style={{ ...type.body, fontWeight: "700", color: color.positive }}>
+              <Text style={{ ...type.meta, color: color.onBrand }}>Expected after bills</Text>
+              <Text style={{ ...type.body, fontWeight: "800", color: color.onBrand }}>
                 {formatWhole(
                   toDisplay(sumMinor(activeIncomes.map((r) => r.amountMinor)) - commitment),
                   displayCurrency

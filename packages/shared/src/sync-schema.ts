@@ -111,11 +111,44 @@ export const SYNC_SCHEMA = {
     created_at: num(),
     updated_at: num(),
   },
+
+  goals: {
+    space_id: str({ indexed: true }),
+    created_by: str({ indexed: true }),
+    name: str(),
+    target_minor: num(),
+    currency: str(),
+    due_at: num({ optional: true, indexed: true }),
+    created_at: num(),
+    updated_at: num(),
+  },
+
+  goal_contributions: {
+    space_id: str({ indexed: true }),
+    goal_id: str({ indexed: true }),
+    created_by: str({ indexed: true }),
+    amount_minor: num(),
+    currency: str(),
+    contributed_at: num({ indexed: true }),
+    created_at: num(),
+    updated_at: num(),
+  },
 } as const satisfies Record<string, TableDef>;
 
 export type SyncTableName = keyof typeof SYNC_SCHEMA;
 
 export const SYNC_TABLE_NAMES = Object.keys(SYNC_SCHEMA) as SyncTableName[];
+
+/** Tables understood by the store build that shipped with schema version 1. */
+export const SYNC_V1_TABLE_NAMES = SYNC_TABLE_NAMES.filter(
+  (name) => name !== "goals" && name !== "goal_contributions"
+);
+
+export const SYNC_SCHEMA_VERSION = 2;
+
+export function syncTablesForVersion(version: number): SyncTableName[] {
+  return version >= SYNC_SCHEMA_VERSION ? SYNC_TABLE_NAMES : SYNC_V1_TABLE_NAMES;
+}
 
 /** Column names for one table, for the parity test and for sync payloads. */
 export function columnsOf(table: SyncTableName): string[] {

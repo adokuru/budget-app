@@ -37,7 +37,7 @@ export default function SettingsScreen() {
       <AppHeader spaceName={current.name} isShared={isShared} />
 
       {/* ── Profile ── */}
-      <SectionCard style={{ marginTop: space.sm }}>
+      <SectionCard style={{ marginTop: space.sm, backgroundColor: color.brandLime }}>
         <View
           style={{
             flexDirection: "row", alignItems: "center", gap: space.base,
@@ -46,19 +46,19 @@ export default function SettingsScreen() {
         >
           <View
             style={{
-              width: 48, height: 48, borderRadius: 24, backgroundColor: color.accent,
+              width: 48, height: 48, borderRadius: radius.card, backgroundColor: color.surfaceStrong,
               alignItems: "center", justifyContent: "center",
             }}
           >
-            <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 16, color: color.onAccent }}>
+            <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 16, color: color.onStrong }}>
               {initials}
             </Text>
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ fontSize: 15, fontWeight: "700", color: color.ink }} numberOfLines={1}>
+            <Text style={{ fontSize: 18, fontFamily: DISPLAY_FONT, color: color.onBrand }} numberOfLines={1}>
               {user?.name ?? "You"}
             </Text>
-            <Text style={type.rowSub} numberOfLines={1}>{user?.email ?? ""}</Text>
+            <Text style={{ ...type.rowSub, color: color.onBrand }} numberOfLines={1}>{user?.email ?? ""}</Text>
           </View>
         </View>
         <StatStrip

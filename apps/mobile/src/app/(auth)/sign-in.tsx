@@ -171,13 +171,13 @@ export default function SignInScreen() {
           style={{
             height: 50, borderRadius: radius.card, ...CONTINUOUS,
             alignItems: "center", justifyContent: "center", marginTop: space.sm,
-            backgroundColor: canSubmit || busy === "email" ? color.surfaceStrong : color.hairline,
+            backgroundColor: canSubmit || busy === "email" ? color.accent : color.hairline,
           }}
         >
           {busy === "email"
-            ? <ActivityIndicator color={color.onStrong} />
+            ? <ActivityIndicator color={color.onAccent} />
             : <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 15,
-                             color: canSubmit ? color.onStrong : color.faint }}>
+                             color: canSubmit ? color.onAccent : color.faint }}>
                 Sign in
               </Text>}
         </Pressable>

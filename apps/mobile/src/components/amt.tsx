@@ -16,7 +16,7 @@ const SIZES: Record<AmtSize, { font: number; sup: number }> = {
   sm: { font: 15, sup: 0.52 },
   md: { font: 20, sup: 0.48 },
   lg: { font: 32, sup: 0.42 },
-  xl: { font: 44, sup: 0.38 },
+  xl: { font: 52, sup: 0.36 },
 };
 
 export function Amt({

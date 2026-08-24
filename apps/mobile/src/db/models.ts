@@ -20,6 +20,7 @@ export class Space extends Model {
   static associations = {
     categories: { type: "has_many", foreignKey: "space_id" },
     transactions: { type: "has_many", foreignKey: "space_id" },
+    goals: { type: "has_many", foreignKey: "space_id" },
   } as const;
 
   @text("name") name: string;
@@ -117,6 +118,42 @@ export class Budget extends Model {
   @readonly @date("updated_at") updatedAt: Date;
 }
 
+export class Goal extends Model {
+  static table = "goals";
+  static associations = {
+    contributions: { type: "has_many", foreignKey: "goal_id" },
+  } as const;
+
+  @field("space_id") spaceId: string;
+  @field("created_by") createdBy: string;
+  @text("name") name: string;
+  @field("target_minor") targetMinor: number;
+  @text("currency") currency: Currency;
+  @date("due_at") dueAt: Date | null;
+  @readonly @date("created_at") createdAt: Date;
+  @readonly @date("updated_at") updatedAt: Date;
+
+  @children("goal_contributions") contributions: Query<GoalContribution>;
+}
+
+export class GoalContribution extends Model {
+  static table = "goal_contributions";
+  static associations = {
+    goal: { type: "belongs_to", key: "goal_id" },
+  } as const;
+
+  @field("space_id") spaceId: string;
+  @field("goal_id") goalId: string;
+  @field("created_by") createdBy: string;
+  @field("amount_minor") amountMinor: number;
+  @text("currency") currency: Currency;
+  @date("contributed_at") contributedAt: Date;
+  @readonly @date("created_at") createdAt: Date;
+  @readonly @date("updated_at") updatedAt: Date;
+
+  @relation("goals", "goal_id") goal: Relation<Goal>;
+}
+
 export const MODELS = [
-  User, Space, Membership, Category, Transaction, RecurringRule, Budget,
+  User, Space, Membership, Category, Transaction, RecurringRule, Budget, Goal, GoalContribution,
 ];

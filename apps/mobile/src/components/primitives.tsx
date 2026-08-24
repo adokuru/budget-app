@@ -1,4 +1,4 @@
-import { Text, View, type ViewStyle } from "react-native";
+import { ActivityIndicator, Text, View, type ViewStyle } from "react-native";
 import Animated, { cubicBezier } from "react-native-reanimated";
 import { useReducedMotion } from "@/lib/motion";
 import { space, GUTTER, radius, CONTINUOUS } from "@/theme/tokens";
@@ -50,7 +50,7 @@ export function Label({
 }
 
 /**
- * The 3px progress hairline. Turns amber past 72% and red past 90%, so a
+ * The compact editorial progress bar. Turns amber past 72% and red past 90%, so a
  * category that is about to break its budget says so before it does.
  */
 export function Thin({
@@ -72,8 +72,8 @@ export function Thin({
   return (
     <View
       style={{
-        height: 3,
-        borderRadius: radius.pill,
+        height: 7,
+        borderRadius: 0,
         backgroundColor: trackColor ?? color.hairline,
         overflow: "hidden",
       }}
@@ -82,7 +82,7 @@ export function Thin({
         style={{
           width: "100%",
           height: "100%",
-          borderRadius: radius.pill,
+          borderRadius: 0,
           backgroundColor: fill,
           transformOrigin: "left",
           transform: [{ scaleX: pct / 100 }],
@@ -114,7 +114,7 @@ export function SectionCard({
           backgroundColor: color.surface,
           borderRadius: radius.card,
           borderWidth: 1,
-          borderColor: color.hairline,
+          borderColor: color.ink,
           overflow: "hidden",
           ...CONTINUOUS,
           ...shadow.card,
@@ -244,6 +244,21 @@ export function SoftBlock({
       ]}
     >
       {children}
+    </View>
+  );
+}
+
+export function ScreenLoading({ label = "Loading" }: { label?: string }) {
+  const { color, type } = useTheme();
+  return (
+    <View
+      accessible
+      accessibilityLabel={label}
+      accessibilityState={{ busy: true }}
+      style={{ minHeight: 280, alignItems: "center", justifyContent: "center", gap: space.md }}
+    >
+      <ActivityIndicator color={color.accent} />
+      <Text style={{ ...type.meta, color: color.faint }}>{label}</Text>
     </View>
   );
 }

@@ -127,9 +127,11 @@ export default function SpacesSheet() {
             {CURRENCY_CODES.map((c) => (
               <Pressable
                 key={c}
+                accessibilityRole="button"
+                accessibilityState={{ selected: c === currency }}
                 onPress={() => setCurrency(c)}
                 style={{
-                  height: 34, paddingHorizontal: sp.md, borderRadius: radius.pill,
+                  minHeight: 48, paddingHorizontal: sp.md, borderRadius: radius.pill,
                   alignItems: "center", justifyContent: "center",
                   backgroundColor: c === currency ? color.surfaceStrong : color.hairline,
                 }}

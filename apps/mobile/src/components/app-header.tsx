@@ -20,7 +20,7 @@ export function AppHeader({
   spaceName: string;
   isShared: boolean;
 }) {
-  const { color, shadow, type } = useTheme();
+  const { color, type } = useTheme();
   const syncStatus = useSyncStatus();
   const { signOut } = useAuth();
   const syncLabel = {
@@ -54,12 +54,11 @@ export function AppHeader({
               alignItems: "center",
               gap: space.xs,
               backgroundColor: color.surface,
-              borderRadius: radius.pill,
+              borderRadius: radius.card,
               borderWidth: 1,
-              borderColor: color.hairline,
+              borderColor: color.ink,
               paddingHorizontal: 10,
               paddingVertical: 6,
-              ...shadow.card,
             }}
           >
             <Text style={{ fontSize: 12 }}>{isShared ? "👨‍👩‍👧" : "👤"}</Text>

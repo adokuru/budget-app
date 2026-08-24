@@ -4,6 +4,7 @@ import { SyncService, type Changes } from "./sync.service";
 import { Auth, JwtGuard } from "../auth/jwt.guard";
 import { ZodBody } from "../auth/zod.pipe";
 import type { AccessClaims } from "../auth/tokens";
+import { SYNC_SCHEMA, type SyncTableName } from "@budget/shared";
 
 const pushSchema = z.object({
   changes: z.record(z.string(), z.object({
@@ -20,8 +21,17 @@ export class SyncController {
   constructor(private readonly sync: SyncService) {}
 
   @Get("pull")
-  pull(@Auth() claims: AccessClaims, @Query("lastPulledAt") lastPulledAt?: string) {
-    return this.sync.pull(claims.sub, Number(lastPulledAt ?? 0) || 0);
+  pull(
+    @Auth() claims: AccessClaims,
+    @Query("lastPulledAt") lastPulledAt?: string,
+    @Query("schemaVersion") schemaVersion?: string,
+    @Query("migrationTables") migrationTables?: string
+  ) {
+    const version = Math.max(1, Number(schemaVersion ?? 1) || 1);
+    const migrations = (migrationTables ?? "")
+      .split(",")
+      .filter((name): name is SyncTableName => name in SYNC_SCHEMA);
+    return this.sync.pull(claims.sub, Number(lastPulledAt ?? 0) || 0, version, migrations);
   }
 
   @Post("push")

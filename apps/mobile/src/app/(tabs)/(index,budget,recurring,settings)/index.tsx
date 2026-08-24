@@ -5,21 +5,24 @@ import { router, useSegments } from "expo-router";
 import * as Haptics from "expo-haptics";
 import {
   sumMinor, convertMinor, percentOf, formatWhole, FALLBACK_EMOJI,
+  type Currency,
 } from "@budget/shared";
 import { database } from "@/db";
 import type { Budget, Category, RecurringRule, Transaction } from "@/db/models";
-import { useQuery } from "@/db/hooks";
+import { useQueryState } from "@/db/hooks";
 import { useSpace } from "@/state/space";
 import { Amt, AmtShort } from "@/components/amt";
 import { AppHeader } from "@/components/app-header";
-import { Rule, Label, Thin, Emoji, EmojiPlain, Row, SectionCard, StatStrip } from "@/components/primitives";
+import { Rule, Label, Thin, Emoji, EmojiPlain, Row, ScreenLoading, SectionCard, StatStrip } from "@/components/primitives";
 import { EmptyState } from "@/components/empty-state";
-import { Fab } from "@/components/fab";
+import { Fab, FAB_CONTENT_PADDING_BOTTOM } from "@/components/fab";
+import { GoalCard } from "@/components/goal-card";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { useTheme } from "@/hooks/use-theme";
+import { useGoalsState } from "@/hooks/use-goals";
 import { projectedRemaining } from "@/lib/recurring-engine";
 import { monthStart, monthEnd, formatRelativeDay } from "@/lib/period";
-import { space, GUTTER, radius, CATEGORY_COLORS, CONTINUOUS } from "@/theme/tokens";
+import { space, GUTTER, radius, DISPLAY_FONT, TABULAR } from "@/theme/tokens";
 import BudgetScreen from "./budget";
 import RecurringScreen from "./recurring";
 import SettingsScreen from "./settings";
@@ -36,36 +39,53 @@ export default function TabRootScreen() {
 function HomeScreen() {
   const { color, type } = useTheme();
   const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared, canEdit } = useSpace();
+  const goalState = useGoalsState(spaceId);
+  const goals = goalState.goals;
   const since = useMemo(() => monthStart().getTime(), []);
+  const historySince = useMemo(() => {
+    const date = monthStart();
+    date.setMonth(date.getMonth() - 2);
+    return date.getTime();
+  }, []);
 
-  const txns = useQuery<Transaction>(
+  const txnState = useQueryState<Transaction>(
     () =>
       database.get<Transaction>("transactions").query(
         Q.where("space_id", spaceId),
-        Q.where("occurred_at", Q.gte(since)),
+        Q.where("occurred_at", Q.gte(historySince)),
         Q.sortBy("occurred_at", Q.desc)
       ),
-    [spaceId, since]
+    [spaceId, historySince]
   );
-  const categories = useQuery<Category>(
+  const categoryState = useQueryState<Category>(
     () => database.get<Category>("categories").query(Q.where("space_id", spaceId)),
     [spaceId]
   );
-  const budgets = useQuery<Budget>(
+  const budgetState = useQueryState<Budget>(
     () => database.get<Budget>("budgets")
       .query(Q.where("space_id", spaceId), Q.where("period_start", since)),
     [spaceId, since]
   );
-  const rules = useQuery<RecurringRule>(
+  const ruleState = useQueryState<RecurringRule>(
     () => database.get<RecurringRule>("recurring_rules")
       .query(Q.where("space_id", spaceId), Q.where("active", true)),
     [spaceId]
   );
 
+  const txns = txnState.rows;
+  const categories = categoryState.rows;
+  const budgets = budgetState.rows;
+  const rules = ruleState.rows;
+  const loading = txnState.loading || categoryState.loading || budgetState.loading || ruleState.loading || goalState.loading;
+
   // Reports read base_minor, the value frozen at entry, so a naira move never
   // silently re-prices a month that already happened.
-  const income = sumMinor(txns.filter((t) => t.kind === "income").map((t) => t.baseMinor));
-  const spent = sumMinor(txns.filter((t) => t.kind === "expense").map((t) => t.baseMinor));
+  const monthTxns = useMemo(
+    () => txns.filter((t) => t.occurredAt.getTime() >= since),
+    [txns, since]
+  );
+  const income = sumMinor(monthTxns.filter((t) => t.kind === "income").map((t) => t.baseMinor));
+  const spent = sumMinor(monthTxns.filter((t) => t.kind === "expense").map((t) => t.baseMinor));
   const budgeted = sumMinor(budgets.map((b) => b.amountMinor));
 
   const ceiling = budgeted > 0 ? budgeted : income;
@@ -85,7 +105,7 @@ function HomeScreen() {
 
   const spending = useMemo(() => {
     const totals = new Map<string, number>();
-    for (const t of txns) {
+    for (const t of monthTxns) {
       if (t.kind !== "expense") continue;
       totals.set(t.categoryId, (totals.get(t.categoryId) ?? 0) + t.baseMinor);
     }
@@ -97,7 +117,7 @@ function HomeScreen() {
         limit: budgets.find((b) => b.categoryId === c.id)?.amountMinor,
       }))
       .sort((a, b) => b.spent - a.spent);
-  }, [txns, categories, budgets]);
+  }, [monthTxns, categories, budgets]);
 
   const upcoming = rules
     .filter((r) => r.kind === "expense")
@@ -107,33 +127,42 @@ function HomeScreen() {
   const pendingIncome = rules.filter((r) => r.kind === "income" && !r.autoPost);
   const topSpending = spending.slice(0, 4);
 
+  if (loading) {
+    return (
+      <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ backgroundColor: color.canvas }}>
+        <AppHeader spaceName={current.name} isShared={isShared} />
+        <ScreenLoading label="Loading your plan" />
+      </ScrollView>
+    );
+  }
+
   return (
     <>
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       style={{ backgroundColor: color.canvas }}
-      contentContainerStyle={{ paddingBottom: 140 }}
+      contentContainerStyle={{ paddingBottom: FAB_CONTENT_PADDING_BOTTOM }}
     >
       <AppHeader spaceName={current.name} isShared={isShared} />
 
       <View
         style={{
-          marginHorizontal: GUTTER, marginTop: space.sm, padding: space.lg,
-          backgroundColor: color.surfaceStrong, borderRadius: radius.card, ...CONTINUOUS,
+          marginTop: space.sm, paddingHorizontal: GUTTER, paddingVertical: space.xl,
+          backgroundColor: color.brandLime,
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ ...type.eyebrow, color: "#FFFFFFA6" }}>
+          <Text style={{ ...type.eyebrow, color: color.onBrand }}>
             {budgeted > 0 ? "Left to spend" : "Available this month"} · {monthLabel()}
           </Text>
           {ceiling > 0 && (
             <View
               style={{
                 paddingHorizontal: 9, paddingVertical: 5, borderRadius: radius.pill,
-                backgroundColor: left < 0 ? color.danger : color.brandLime,
+                backgroundColor: left < 0 ? color.danger : color.surfaceStrong,
               }}
             >
-              <Text style={{ fontSize: 10, fontWeight: "800", color: left < 0 ? color.onAccent : color.onBrand }}>
+              <Text style={{ fontSize: 10, fontWeight: "800", color: color.onStrong }}>
                 {left < 0 ? "Over budget" : "On track"}
               </Text>
             </View>
@@ -141,15 +170,15 @@ function HomeScreen() {
         </View>
         <View style={{ marginTop: space.sm }}>
           <Amt minor={toDisplay(left)} currency={displayCurrency} size="xl"
-               tone={left < 0 ? color.danger : color.onStrong} />
+               tone={left < 0 ? color.danger : color.onBrand} />
         </View>
-        <Text style={{ ...type.meta, color: "#FFFFFFA6", marginTop: space.sm }}>
+        <Text style={{ ...type.meta, color: color.onBrand, marginTop: space.sm }}>
           {ceiling > 0
             ? `of ${formatWhole(toDisplay(ceiling), displayCurrency)}${pct !== null ? ` · ${pct}% used` : ""}`
             : `${formatWhole(toDisplay(spent), displayCurrency)} spent · no budget set`}
         </Text>
         <View style={{ marginTop: space.base }}>
-          <Thin spent={spent} budget={ceiling} tone={color.brandLime} trackColor="#FFFFFF2E" />
+          <Thin spent={spent} budget={ceiling} tone={color.ink} trackColor="#11162A2E" />
         </View>
       </View>
 
@@ -162,6 +191,30 @@ function HomeScreen() {
           ]}
         />
       </SectionCard>
+
+      <ThreeMonthBars txns={txns} toDisplay={toDisplay} currency={displayCurrency} />
+
+      {goals.some((item) => item.state !== "completed") && (
+        <>
+          <Label
+            action={(
+              <Pressable
+                onPress={() => router.push({ pathname: "/(tabs)/(budget)/budget", params: { view: "goals" } })}
+                hitSlop={10}
+              >
+                <Text style={type.action}>View all</Text>
+              </Pressable>
+            )}
+          >
+            Goals
+          </Label>
+          <View style={{ gap: space.sm }}>
+            {goals.filter((item) => item.state !== "completed").slice(0, 2).map((summary) => (
+              <GoalCard key={summary.goal.id} summary={summary} compact />
+            ))}
+          </View>
+        </>
+      )}
 
       {/* ── Salary confirmation ── */}
       {pendingIncome.length > 0 && (
@@ -212,39 +265,25 @@ function HomeScreen() {
           >
             Spending
           </Label>
-          <SectionCard>
-            {topSpending.map(({ category, spent: catSpent, limit }, i) => (
-              <View key={category.id}>
-                <Row>
-                  <EmojiPlain glyph={category.emoji || FALLBACK_EMOJI} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <View
-                      style={{
-                        flexDirection: "row", alignItems: "baseline",
-                        justifyContent: "space-between", marginBottom: space.sm,
-                      }}
-                    >
-                      <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
-                        {category.name}
-                      </Text>
-                      <Text style={type.rowSub}>
-                        {limit
-                          ? `${formatWhole(toDisplay(limit - catSpent), displayCurrency)} left`
-                          : "no limit"}
-                      </Text>
-                    </View>
-                    <Thin
-                      spent={catSpent}
-                      budget={limit ?? catSpent}
-                      tone={CATEGORY_COLORS[category.colorKey]}
-                    />
-                  </View>
-                  <AmtShort minor={toDisplay(catSpent)} currency={displayCurrency} />
-                </Row>
-                {i < topSpending.length - 1 && <Rule full />}
-              </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: space.sm, paddingHorizontal: GUTTER }}>
+            {topSpending.map(({ category, spent: catSpent, limit }, index) => (
+              <Pressable
+                key={category.id}
+                accessibilityLabel={`${category.name}, ${formatWhole(toDisplay(catSpent), displayCurrency)} spent${limit ? `, ${formatWhole(toDisplay(limit - catSpent), displayCurrency)} left` : ""}`}
+                onPress={() => router.push("/(tabs)/(budget)/budget")}
+                style={{
+                  width: index === 0 ? 126 : 112, height: index === 0 ? 126 : 112,
+                  borderRadius: 999, alignItems: "center", justifyContent: "center",
+                  padding: space.md, borderWidth: 1, borderColor: color.ink,
+                  backgroundColor: index % 2 === 0 ? color.surfaceStrong : color.surface,
+                }}
+              >
+                <Text style={{ fontSize: 20 }}>{category.emoji || FALLBACK_EMOJI}</Text>
+                <Text numberOfLines={1} style={{ ...type.rowSub, color: index % 2 === 0 ? color.onStrong : color.ink }}>{category.name}</Text>
+                <AmtShort minor={toDisplay(catSpent)} currency={displayCurrency} tone={index % 2 === 0 ? color.brandLime : color.ink} size={18} />
+              </Pressable>
             ))}
-          </SectionCard>
+          </View>
         </>
       )}
 
@@ -328,4 +367,60 @@ function HomeScreen() {
 
 function monthLabel(d: Date = new Date()): string {
   return d.toLocaleDateString(undefined, { month: "long" });
+}
+
+function ThreeMonthBars({
+  txns,
+  toDisplay,
+  currency,
+}: {
+  txns: Transaction[];
+  toDisplay: (minor: number) => number;
+  currency: Currency;
+}) {
+  const { color, type } = useTheme();
+  const months = Array.from({ length: 3 }, (_, offset) => {
+    const date = monthStart();
+    date.setMonth(date.getMonth() - (2 - offset));
+    const next = new Date(date);
+    next.setMonth(next.getMonth() + 1);
+    const rows = txns.filter((txn) => {
+      const at = txn.occurredAt.getTime();
+      return at >= date.getTime() && at < next.getTime();
+    });
+    return {
+      label: date.toLocaleDateString(undefined, { month: "short" }),
+      income: sumMinor(rows.filter((txn) => txn.kind === "income").map((txn) => txn.baseMinor)),
+      spent: sumMinor(rows.filter((txn) => txn.kind === "expense").map((txn) => txn.baseMinor)),
+    };
+  });
+  const max = Math.max(1, ...months.flatMap((month) => [month.income, month.spent]));
+
+  return (
+    <View style={{ marginTop: space.md, marginHorizontal: GUTTER, padding: space.lg, backgroundColor: color.accent }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Text style={{ ...type.eyebrow, color: color.onAccent }}>Income vs spending</Text>
+        <View style={{ flexDirection: "row", gap: space.md }}>
+          <Text style={{ ...type.rowSub, color: color.onAccent }}>■ Income</Text>
+          <Text style={{ ...type.rowSub, color: color.onAccent }}>▧ Spent</Text>
+        </View>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 142, gap: space.lg, paddingTop: space.lg }}>
+        {months.map((month) => (
+          <View
+            key={month.label}
+            accessible
+            accessibilityLabel={`${month.label}: ${formatWhole(toDisplay(month.income), currency)} income, ${formatWhole(toDisplay(month.spent), currency)} spent`}
+            style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", gap: space.sm }}
+          >
+            <View style={{ height: 104, flexDirection: "row", alignItems: "flex-end", gap: 5 }}>
+              <View style={{ width: 22, height: Math.max(4, (month.income / max) * 104), backgroundColor: color.brandLime }} />
+              <View style={{ width: 22, height: Math.max(4, (month.spent / max) * 104), backgroundColor: color.surfaceStrong, borderWidth: 1, borderColor: color.onAccent }} />
+            </View>
+            <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 11, color: color.onAccent, ...TABULAR }}>{month.label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
 }

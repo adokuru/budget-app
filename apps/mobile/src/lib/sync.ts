@@ -63,9 +63,11 @@ async function attempt(): Promise<SyncOutcome> {
     await synchronize({
       database,
 
-      pullChanges: async ({ lastPulledAt }) => {
+      pullChanges: async ({ lastPulledAt, schemaVersion, migration }) => {
+        const migrationTables = migration?.tables.join(",") ?? "";
         const res = await api<{ changes: unknown; timestamp: number }>(
-          `/sync/pull?lastPulledAt=${lastPulledAt ?? 0}`
+          `/sync/pull?lastPulledAt=${lastPulledAt ?? 0}` +
+          `&schemaVersion=${schemaVersion}&migrationTables=${encodeURIComponent(migrationTables)}`
         );
         return { changes: res.changes as never, timestamp: res.timestamp };
       },
@@ -80,6 +82,7 @@ async function attempt(): Promise<SyncOutcome> {
       // The server sends every column, so Watermelon does not need to guess
       // which ones changed.
       sendCreatedAsUpdated: false,
+      migrationsEnabledAtVersion: 1,
     });
 
     return { status: "ok", at: Date.now() };

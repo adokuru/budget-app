@@ -2,18 +2,18 @@ import type { ColorSchemeName, TextStyle } from "react-native";
 
 /** Kobo Tracker stays cobalt and lime; only its neutral materials adapt. */
 export const lightColor = {
-  canvas: "#F6F7F3",
-  surface: "#FFFFFF",
-  surfaceStrong: "#111A3A",
-  chip: "#F0F1EC",
-  chipAlt: "#ECEEF8",
-  pressed: "#F1F2EE",
+  canvas: "#F1F0EA",
+  surface: "#FCFCF8",
+  surfaceStrong: "#11162A",
+  chip: "#E5E4DC",
+  chipAlt: "#E6E9FF",
+  pressed: "#DAD9D1",
   ink: "#11162A",
-  body: "#555A68",
-  faint: "#656A78",
-  fainter: "#696E7C",
-  hairline: "#E2E5DE",
-  border: "#D3D7CF",
+  body: "#414653",
+  faint: "#5E6370",
+  fainter: "#6B6F79",
+  hairline: "#C9C9C1",
+  border: "#AEB0AA",
   accent: "#3157F5",
   accentDeep: "#213CAD",
   brandLime: "#D8FF3E",
@@ -23,24 +23,24 @@ export const lightColor = {
   onStrong: "#FFFFFF",
   onAccent: "#FFFFFF",
   danger: "#CF2934",
-  warning: "#A65C00",
+  warning: "#884900",
 } as const;
 
 export type AppColor = { readonly [K in keyof typeof lightColor]: string };
 
 export const darkColor: AppColor = {
-  canvas: "#090D1A",
-  surface: "#11172A",
-  surfaceStrong: "#17245A",
-  chip: "#171E31",
-  chipAlt: "#1B2547",
-  pressed: "#1B2336",
+  canvas: "#080B14",
+  surface: "#111623",
+  surfaceStrong: "#03050A",
+  chip: "#1A2130",
+  chipAlt: "#1D294B",
+  pressed: "#252C3A",
   ink: "#F5F7FF",
   body: "#C4CAD8",
   faint: "#9AA3B8",
   fainter: "#7C869C",
-  hairline: "#242C40",
-  border: "#333C54",
+  hairline: "#343B49",
+  border: "#4B5363",
   accent: "#7088FF",
   accentDeep: "#8EA3FF",
   brandLime: "#D8FF3E",
@@ -81,14 +81,14 @@ export const space = {
 export const GUTTER = 20;
 
 export const radius = {
-  sheet: 24, card: 18, chip: 12, pill: 999,
+  sheet: 24, card: 4, chip: 3, pill: 999,
 } as const;
 
 export const CONTINUOUS = { borderCurve: "continuous" } as const;
 
 export const lightShadow = {
-  fab: { boxShadow: "0 6px 18px rgba(49, 87, 245, 0.34)" },
-  card: { boxShadow: "0 2px 10px rgba(17, 22, 42, 0.05)" },
+  fab: { boxShadow: "4px 4px 0 rgba(17, 22, 42, 0.24)" },
+  card: { boxShadow: "0 0 0 rgba(0, 0, 0, 0)" },
   sheet: { boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.12)" },
 } as const;
 
@@ -97,8 +97,8 @@ export type AppShadow = {
 };
 
 export const darkShadow: AppShadow = {
-  fab: { boxShadow: "0 6px 22px rgba(49, 87, 245, 0.44)" },
-  card: { boxShadow: "0 3px 16px rgba(0, 0, 0, 0.32)" },
+  fab: { boxShadow: "4px 4px 0 rgba(216, 255, 62, 0.24)" },
+  card: { boxShadow: "0 0 0 rgba(0, 0, 0, 0)" },
   sheet: { boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.46)" },
 };
 
@@ -111,11 +111,11 @@ function makeType(palette: AppColor) {
       fontSize: 10, lineHeight: 14, fontWeight: "800",
       letterSpacing: 1.4, textTransform: "uppercase", color: palette.faint,
     },
-    screenTitle: { fontSize: 16, lineHeight: 21, fontWeight: "700" },
+    screenTitle: { fontSize: 18, lineHeight: 23, fontWeight: "700" },
     rowTitle: { fontSize: 13, lineHeight: 18, fontWeight: "500" },
     rowTitleLg: { fontSize: 14, lineHeight: 19, fontWeight: "500" },
     rowSub: { fontSize: 11, lineHeight: 15, fontWeight: "400", color: palette.faint },
-    body: { fontSize: 13, lineHeight: 18, fontWeight: "400" },
+    body: { fontSize: 14, lineHeight: 20, fontWeight: "400" },
     meta: { fontSize: 12, lineHeight: 16, fontWeight: "400", color: palette.faint },
     action: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: palette.accent },
     statLabel: {

@@ -20,6 +20,7 @@ RUN pnpm --filter @budget/api --prod deploy --legacy /prod/api
 FROM base AS runtime
 ENV NODE_ENV=production
 COPY --from=build /prod/api /app
+COPY --from=build /repo/apps/api/drizzle /app/drizzle
 WORKDIR /app
 EXPOSE 3000
 # Render sets PORT; main.ts binds 0.0.0.0, which Render requires.

@@ -158,6 +158,13 @@ function Gate() {
               title: "Transactions",
             }}
           />
+          <Stack.Screen
+            name="goal/[id]"
+            options={{
+              ...detailHeader,
+              title: "Goal",
+            }}
+          />
           {/*
             Sheets are routes, not components: native presentation, native
             detents, native dismiss gesture. No sheet library in the app.
@@ -168,6 +175,8 @@ function Gate() {
           <Stack.Screen name="recurring-rule" options={{ ...sheet, sheetAllowedDetents: [0.8, 0.95] }} />
           <Stack.Screen name="spaces" options={{ ...sheet, sheetAllowedDetents: [0.6] }} />
           <Stack.Screen name="members" options={{ ...sheet, sheetAllowedDetents: [0.7] }} />
+          <Stack.Screen name="goal-editor" options={{ ...sheet, sheetAllowedDetents: [0.9, 0.95], sheetInitialDetentIndex: "last" }} />
+          <Stack.Screen name="goal-contribution" options={{ ...sheet, sheetAllowedDetents: [0.72] }} />
         </Stack.Protected>
       </Stack>
     </Body>

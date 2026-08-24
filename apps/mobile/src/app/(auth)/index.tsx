@@ -49,7 +49,7 @@ export default function WelcomeScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: color.canvas }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.brandLime }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1, paddingHorizontal: GUTTER, paddingTop: space.md }}
@@ -60,13 +60,13 @@ export default function WelcomeScreen() {
         <View style={{ marginTop: space.xl }}>
           <Text
             style={{
-              fontFamily: DISPLAY_FONT, fontSize: 36, lineHeight: 40,
-              letterSpacing: -1.2, color: color.ink,
+              fontFamily: DISPLAY_FONT, fontSize: 42, lineHeight: 45,
+              letterSpacing: -1.6, color: color.onBrand,
             }}
           >
             Know what you can spend this month.
           </Text>
-          <Text style={{ ...type.body, color: color.body, fontSize: 15, lineHeight: 22, marginTop: space.md }}>
+          <Text style={{ ...type.body, color: color.onBrand, fontSize: 15, lineHeight: 22, marginTop: space.md }}>
             Add your income and bills. Kobo Tracker shows what is left for everyday spending, on your own or with family.
           </Text>
         </View>
@@ -75,7 +75,7 @@ export default function WelcomeScreen() {
           <View
             style={{
               position: "absolute", left: 12, right: -4, top: 32, bottom: 20,
-              borderRadius: radius.card + 6, backgroundColor: color.brandLime,
+              borderRadius: radius.card, backgroundColor: color.accent,
               transform: [{ rotate: "2deg" }], ...CONTINUOUS,
             }}
           />
@@ -83,7 +83,7 @@ export default function WelcomeScreen() {
             accessible
             accessibilityLabel="Example monthly plan. Five hundred thousand naira income, two hundred thirty-five thousand five hundred naira for bills and goals, eighty thousand naira spent, and one hundred eighty-four thousand five hundred naira left to spend. On track."
             style={{
-              backgroundColor: color.surfaceStrong, borderRadius: radius.card + 6,
+              backgroundColor: color.surfaceStrong, borderRadius: radius.card,
               paddingHorizontal: space.lg, paddingVertical: space.xl,
               transform: [{ rotate: "-1.5deg" }], ...CONTINUOUS, ...shadow.sheet,
             }}
@@ -116,7 +116,7 @@ export default function WelcomeScreen() {
       <View
         style={{
           gap: space.sm, paddingHorizontal: GUTTER, paddingTop: space.sm,
-          backgroundColor: color.canvas,
+          backgroundColor: color.brandLime,
         }}
       >
           <Pressable

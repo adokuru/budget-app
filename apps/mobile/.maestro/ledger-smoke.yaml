@@ -9,11 +9,19 @@ tags:
     clearState: true
     clearKeychain: true
 
+- extendedWaitUntil:
+    visible: ".*(Not Now|Start planning|Welcome back).*"
+    timeout: 60000
+
 - runFlow:
     when:
       visible: "Not Now"
     commands:
       - tapOn: "Not Now"
+
+- extendedWaitUntil:
+    visible: ".*(Start planning|Welcome back).*"
+    timeout: 60000
 
 - runFlow:
     when:
@@ -109,6 +117,9 @@ tags:
 
 # Create, edit, pause, resume, and delete a recurring rule.
 - tapOn: "Recurring"
+- extendedWaitUntil:
+    visible: "Monthly bills"
+    timeout: 15000
 - tapOn: "Add one"
 - tapOn: "Select Food category"
 - scrollUntilVisible:
@@ -161,8 +172,72 @@ tags:
 - tapOn: "Yes, delete item"
 - assertNotVisible: "Bills & PHCN"
 
+# Create, fund, correct, edit, complete, and delete a shared goal.
+- tapOn: "Budget"
+- extendedWaitUntil:
+    visible: "Spending"
+    timeout: 15000
+- tapOn: "Goals"
+- tapOn: "Create a goal"
+- tapOn:
+    id: "goal-name"
+- inputText: "Smoke goal"
+- pressKey: Enter
+- tapOn: "Enter 1"
+- tapOn:
+    text: "Enter 0"
+    repeat: 4
+- tapOn: "Save goal"
+- tapOn: ".*Smoke goal.*"
+- tapOn: "Add money.*"
+- tapOn: "Enter 2"
+- tapOn: "Enter 5"
+- tapOn:
+    text: "Enter 0"
+    repeat: 2
+- tapOn: "Save goal contribution"
+- assertVisible: "25%"
+
+# Relaunch proves the goal ledger survives and route state can be restored.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: ".*Smoke goal.*"
+    timeout: 15000
+- runFlow:
+    when:
+      notVisible: "Edit goal.*"
+    commands:
+      - tapOn: ".*Smoke goal.*"
+- tapOn: "Edit goal.*"
+- tapOn:
+    id: "goal-name"
+- eraseText
+- inputText: "Smoke goal updated"
+- pressKey: Enter
+- tapOn: "Save goal"
+- assertVisible: ".*Smoke goal updated.*"
+
+# Remove the mistaken contribution, then complete the target.
+- tapOn: ".*tap to remove.*"
+- tapOn: "Remove"
+- assertVisible: "0%"
+- tapOn: "Add money.*"
+- tapOn: "Enter 1"
+- tapOn:
+    text: "Enter 0"
+    repeat: 4
+- tapOn: "Save goal contribution"
+- assertVisible: "100%"
+- tapOn: "Delete goal"
+- tapOn: "Yes, delete goal"
+- assertNotVisible: ".*Smoke goal updated.*"
+
 # Cleanup keeps repeated local runs isolated.
 - tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Preferences"
+    timeout: 15000
 - scrollUntilVisible:
     element:
       text: "Delete account"

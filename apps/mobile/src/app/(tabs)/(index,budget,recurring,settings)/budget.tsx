@@ -1,28 +1,32 @@
 import { useMemo } from "react";
 import { ScrollView, Text, View } from "react-native";
-import { Link } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import { Q } from "@nozbe/watermelondb";
 import { sumMinor, convertMinor, percentOf, formatWhole, FALLBACK_EMOJI } from "@budget/shared";
 import { database } from "@/db";
 import type { Budget, Category, Transaction } from "@/db/models";
-import { useQuery } from "@/db/hooks";
+import { useQueryState } from "@/db/hooks";
 import { useSpace } from "@/state/space";
 import { Amt, AmtShort } from "@/components/amt";
 import { AppHeader } from "@/components/app-header";
-import { Rule, Label, Thin, EmojiPlain, Row, SectionCard } from "@/components/primitives";
+import { Rule, Label, Thin, EmojiPlain, Row, ScreenLoading, SectionCard } from "@/components/primitives";
 import { EmptyState } from "@/components/empty-state";
-import { Fab } from "@/components/fab";
+import { Fab, FAB_CONTENT_PADDING_BOTTOM } from "@/components/fab";
+import { GoalCard } from "@/components/goal-card";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { useTheme } from "@/hooks/use-theme";
+import { useGoalsState } from "@/hooks/use-goals";
 import { monthStart } from "@/lib/period";
-import { space, CATEGORY_COLORS } from "@/theme/tokens";
+import { space, CATEGORY_COLORS, DISPLAY_FONT, GUTTER } from "@/theme/tokens";
 
 export default function BudgetScreen() {
+  const { view } = useLocalSearchParams<{ view?: string }>();
+  const showingGoals = view === "goals";
   const { color, type } = useTheme();
   const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared, canEdit } = useSpace();
   const since = useMemo(() => monthStart().getTime(), []);
 
-  const txns = useQuery<Transaction>(
+  const txnState = useQueryState<Transaction>(
     () =>
       database.get<Transaction>("transactions").query(
         Q.where("space_id", spaceId), Q.where("kind", "expense"),
@@ -30,16 +34,21 @@ export default function BudgetScreen() {
       ),
     [spaceId, since]
   );
-  const categories = useQuery<Category>(
+  const categoryState = useQueryState<Category>(
     () => database.get<Category>("categories")
       .query(Q.where("space_id", spaceId), Q.sortBy("sort", Q.asc)),
     [spaceId]
   );
-  const budgets = useQuery<Budget>(
+  const budgetState = useQueryState<Budget>(
     () => database.get<Budget>("budgets")
       .query(Q.where("space_id", spaceId), Q.where("period_start", since)),
     [spaceId, since]
   );
+
+  const txns = txnState.rows;
+  const categories = categoryState.rows;
+  const budgets = budgetState.rows;
+  const loading = txnState.loading || categoryState.loading || budgetState.loading;
 
   const toDisplay = (m: number) =>
     baseCurrency === displayCurrency ? m : convertMinor(m, baseCurrency, displayCurrency, rates);
@@ -70,41 +79,48 @@ export default function BudgetScreen() {
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       style={{ backgroundColor: color.canvas }}
-      contentContainerStyle={{ paddingBottom: 140 }}
+      contentContainerStyle={{ paddingBottom: FAB_CONTENT_PADDING_BOTTOM }}
     >
       <AppHeader spaceName={current.name} isShared={isShared} />
 
-      <SectionCard style={{ marginTop: space.sm, padding: space.lg }}>
-        <Text style={{ ...type.eyebrow, marginBottom: space.sm }}>
+      <BudgetMode goals={showingGoals} />
+
+      {loading ? <ScreenLoading label="Loading budget" /> : showingGoals ? <GoalsView /> : <>
+
+      <View style={{ marginHorizontal: GUTTER, marginTop: space.sm, padding: space.lg, backgroundColor: color.accent }}>
+        <Text style={{ ...type.eyebrow, color: color.onAccent, marginBottom: space.sm }}>
           {monthLabel()} budget
         </Text>
-        <Amt minor={toDisplay(budgeted)} currency={displayCurrency} size="xl" />
+        <Amt minor={toDisplay(budgeted)} currency={displayCurrency} size="xl" tone={color.onAccent} />
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.lg, marginTop: space.base }}>
-          <Figure label="Spent" value={<AmtShort minor={toDisplay(totalSpent)} currency={displayCurrency} size={15} />} />
-          <Divider />
+          <Figure inverse label="Spent" value={<AmtShort minor={toDisplay(totalSpent)} currency={displayCurrency} size={15} tone={color.onAccent} />} />
+          <Divider inverse />
           <Figure
+            inverse
             label="Remaining"
             value={
               <AmtShort
                 minor={toDisplay(remaining)}
                 currency={displayCurrency}
                 size={15}
-                tone={remaining < 0 ? color.danger : color.positive}
+                tone={remaining < 0 ? color.danger : color.brandLime}
               />
             }
           />
-          <Divider />
+          <Divider inverse />
           <Figure
+            inverse
             label="Used"
             value={
-              <Text style={{ fontSize: 15, fontWeight: "800", color: color.ink }}>
+              <Text style={{ fontSize: 15, fontWeight: "800", color: color.onAccent }}>
                 {used === null ? "—" : `${used}%`}
               </Text>
             }
           />
         </View>
-      </SectionCard>
+        <CategoryDistribution rows={rows} total={totalSpent} />
+      </View>
 
       {rows.length === 0 ? (
         <SectionCard style={{ marginTop: space.lg }}>
@@ -170,26 +186,127 @@ export default function BudgetScreen() {
           </SectionCard>
         </>
       )}
+      </>}
     </ScrollView>
     <Fab />
     </>
   );
 }
 
-function Figure({ label, value }: { label: string; value: React.ReactNode }) {
-  const { type } = useTheme();
+function BudgetMode({ goals }: { goals: boolean }) {
+  const { color, type } = useTheme();
+  return (
+    <View style={{ flexDirection: "row", marginHorizontal: GUTTER, borderWidth: 1, borderColor: color.ink }}>
+      {[
+        { label: "Spending", selected: !goals, view: undefined },
+        { label: "Goals", selected: goals, view: "goals" },
+      ].map((item) => (
+        <Pressable
+          key={item.label}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: item.selected }}
+          onPress={() => router.setParams({ view: item.view })}
+          style={{ flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", backgroundColor: item.selected ? color.surfaceStrong : color.surface }}
+        >
+          <Text style={{ ...type.rowTitle, fontWeight: "800", color: item.selected ? color.onStrong : color.ink }}>
+            {item.label}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function GoalsView() {
+  const { color, type } = useTheme();
+  const { spaceId, baseCurrency, canEdit } = useSpace();
+  const goalState = useGoalsState(spaceId);
+  const goals = goalState.goals;
+  const active = goals.filter((item) => item.state !== "completed");
+  const target = sumMinor(active.map((item) => item.goal.targetMinor));
+  const tracked = sumMinor(active.map((item) => item.totalMinor));
+
+  if (goalState.loading) return <ScreenLoading label="Loading goals" />;
+
+  return (
+    <View style={{ paddingTop: space.md, gap: space.md }}>
+      <View style={{ marginHorizontal: GUTTER, padding: space.lg, backgroundColor: color.accent, gap: space.sm }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: space.md }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ ...type.eyebrow, color: color.onAccent }}>Shared goals</Text>
+            <Text selectable style={{ fontFamily: DISPLAY_FONT, fontSize: 30, lineHeight: 34, color: color.onAccent }}>
+              {formatWhole(tracked, baseCurrency)}
+            </Text>
+            <Text selectable style={{ ...type.rowSub, color: color.onAccent }}>
+              tracked of {formatWhole(target, baseCurrency)} across {active.length} active {active.length === 1 ? "goal" : "goals"}
+            </Text>
+          </View>
+          {canEdit && (
+            <Pressable
+              accessibilityLabel="Create a goal"
+              onPress={() => router.push("/goal-editor" as never)}
+              style={{ minHeight: 44, paddingHorizontal: space.md, alignItems: "center", justifyContent: "center", backgroundColor: color.brandLime }}
+            >
+              <Text style={{ ...type.rowTitle, fontWeight: "800", color: color.onBrand }}>New goal</Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+
+      {goals.length === 0 ? (
+        <View style={{ marginHorizontal: GUTTER, borderWidth: 1, borderColor: color.ink }}>
+          <EmptyState
+            symbol="◎"
+            title="No goals yet"
+            body="Track school fees, an emergency fund, rent or a trip without changing your monthly spending plan."
+            action={canEdit ? { label: "Create a goal", href: "/goal-editor" } : undefined}
+          />
+        </View>
+      ) : goals.map((summary) => <GoalCard key={summary.goal.id} summary={summary} />)}
+
+      <Text selectable style={{ ...type.rowSub, lineHeight: 17, paddingHorizontal: GUTTER }}>
+        Goals track progress only. They do not move money or change left to spend.
+      </Text>
+    </View>
+  );
+}
+
+function Figure({ label, value, inverse = false }: { label: string; value: React.ReactNode; inverse?: boolean }) {
+  const { color, type } = useTheme();
 
   return (
     <View style={{ gap: 2 }}>
-      <Text style={type.statLabel}>{label}</Text>
+      <Text style={{ ...type.statLabel, color: inverse ? color.onAccent : type.statLabel.color }}>{label}</Text>
       {value}
     </View>
   );
 }
 
-function Divider() {
+function Divider({ inverse = false }: { inverse?: boolean }) {
   const { color } = useTheme();
-  return <View style={{ width: 1, height: 30, backgroundColor: color.hairline }} />;
+  return <View style={{ width: 1, height: 30, backgroundColor: inverse ? "#FFFFFF55" : color.hairline }} />;
+}
+
+function CategoryDistribution({
+  rows,
+  total,
+}: {
+  rows: { category: Category; spent: number; limit: number }[];
+  total: number;
+}) {
+  const { color } = useTheme();
+  if (total <= 0) return null;
+  return (
+    <View
+      accessible
+      accessibilityLabel={rows.filter((row) => row.spent > 0).map((row) => `${row.category.name} ${Math.round((row.spent / total) * 100)} percent`).join(", ")}
+      style={{ height: 18, flexDirection: "row", marginTop: space.lg, borderWidth: 1, borderColor: color.onAccent }}
+    >
+      {rows.filter((row) => row.spent > 0).map((row) => (
+        <View key={row.category.id} style={{ flex: row.spent, backgroundColor: CATEGORY_COLORS[row.category.colorKey] }} />
+      ))}
+    </View>
+  );
 }
 
 function monthLabel(d: Date = new Date()): string {

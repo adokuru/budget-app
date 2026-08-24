@@ -12,17 +12,24 @@ export function useQuery<T extends Model>(
   build: () => Query<T>,
   deps: React.DependencyList
 ): T[] {
-  const [rows, setRows] = useState<T[]>([]);
+  return useQueryState(build, deps).rows;
+}
+
+export function useQueryState<T extends Model>(
+  build: () => Query<T>,
+  deps: React.DependencyList
+): { rows: T[]; loading: boolean } {
+  const [state, setState] = useState<{ rows: T[]; loading: boolean }>({ rows: [], loading: true });
 
   useEffect(() => {
     const query = build();
     const columns = query.collection.schema.columnArray.map((column) => column.name);
-    const sub = query.observeWithColumns(columns).subscribe(setRows);
+    const sub = query.observeWithColumns(columns).subscribe((rows) => setState({ rows, loading: false }));
     return () => sub.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  return rows;
+  return state;
 }
 
 /** Same, but for a query whose results feed a total rather than a list. */

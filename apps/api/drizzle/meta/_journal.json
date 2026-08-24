@@ -29,6 +29,13 @@
       "when": 1787574040095,
       "tag": "0003_special_mojo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787603896117,
+      "tag": "0004_shared_goals",
+      "breakpoints": true
     }
   ]
 }

@@ -57,10 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     await clearTokens();
     saveUser(null);
+    setUser(null);
+    // Unmount database observers before clearing the account-owned store.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
     // Local data belongs to the account that was signed in — leaving it would
     // show the next person on this device someone else's finances.
     await database.write(() => database.unsafeResetDatabase());
-    setUser(null);
   }, []);
 
   return (

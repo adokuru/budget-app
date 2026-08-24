@@ -28,6 +28,8 @@ const byTable = {
   transactions: SYNCED.transactions,
   recurring_rules: SYNCED.recurringRules,
   budgets: SYNCED.budgets,
+  goals: SYNCED.goals,
+  goal_contributions: SYNCED.goalContributions,
 } as const;
 
 const pgColumnNames = (t: (typeof byTable)[keyof typeof byTable]) =>

@@ -18,19 +18,19 @@ export default function WidgetsScreen() {
           style={{
             ...CONTINUOUS,
             minHeight: 150,
-            borderRadius: radius.card + 6,
-            backgroundColor: color.chip,
+            borderRadius: radius.card,
+            backgroundColor: color.surfaceStrong,
             padding: space.lg,
             justifyContent: "space-between",
           }}
         >
           <View style={{ gap: space.xs }}>
-            <Text style={{ ...type.eyebrow, color: color.accent }}>Monthly budget</Text>
-            <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 24, color: color.ink }}>Budget left</Text>
-            <Text style={type.rowSub}>See your spending, remaining budget and monthly progress.</Text>
+            <Text style={{ ...type.eyebrow, color: color.brandLime }}>Monthly budget</Text>
+            <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 28, color: color.onStrong }}>Budget left</Text>
+            <Text style={{ ...type.rowSub, color: "#FFFFFFB8" }}>See your spending, remaining budget and monthly progress.</Text>
           </View>
-          <View style={{ height: 6, borderRadius: 3, backgroundColor: color.border, overflow: "hidden" }}>
-            <View style={{ width: "62%", height: "100%", backgroundColor: color.accent }} />
+          <View style={{ height: 10, backgroundColor: "#FFFFFF33", overflow: "hidden" }}>
+            <View style={{ width: "62%", height: "100%", backgroundColor: color.brandLime }} />
           </View>
         </View>
       </View>

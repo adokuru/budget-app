@@ -38,7 +38,7 @@ export function Field({
           style={{
             fontSize: 15, color: color.ink,
             backgroundColor: color.surface,
-            borderWidth: 1, borderColor: color.hairline,
+            borderWidth: 1, borderColor: color.ink,
             borderRadius: radius.chip, ...CONTINUOUS,
             paddingLeft: space.base, paddingRight: secureTextEntry ? 70 : space.base, paddingVertical: 13,
           }}

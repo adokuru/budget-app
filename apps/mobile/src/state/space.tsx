@@ -3,7 +3,7 @@ import { Q } from "@nozbe/watermelondb";
 import { isCurrency, type Currency, type RateTable } from "@budget/shared";
 import { database } from "@/db";
 import { useQuery } from "@/db/hooks";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import type { Membership, Space } from "@/db/models";
 import { useTheme } from "@/hooks/use-theme";
 import { loadRates } from "@/lib/rates";
@@ -161,5 +161,14 @@ const writeActiveSpaceId = (id: string) => writeJson(ACTIVE_SPACE_FILE, { id });
  */
 function SpaceLoading() {
   const { color } = useTheme();
-  return <View style={{ flex: 1, backgroundColor: color.canvas }} />;
+  return (
+    <View
+      accessible
+      accessibilityLabel="Loading your space"
+      accessibilityState={{ busy: true }}
+      style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: color.canvas }}
+    >
+      <ActivityIndicator color={color.accent} />
+    </View>
+  );
 }

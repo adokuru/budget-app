@@ -31,11 +31,11 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F6F7F3",
+          "backgroundColor": "#F1F0EA",
           "image": "./assets/images/kobo-mark.png",
           "imageWidth": 104,
           "dark": {
-            "backgroundColor": "#090D1A",
+            "backgroundColor": "#080B14",
             "image": "./assets/images/kobo-mark.png"
           }
         }

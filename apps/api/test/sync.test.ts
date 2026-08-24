@@ -44,7 +44,7 @@ after(async () => {
 
 beforeEach(async () => {
   await db.execute(sql`
-    truncate transactions, budgets, recurring_rules, categories,
+    truncate goal_contributions, goals, transactions, budgets, recurring_rules, categories,
              invites, memberships, spaces, devices, users cascade
   `);
 });
@@ -540,4 +540,134 @@ test("a recurring rule round-trips its millis dates", async () => {
   assert.equal(rule.auto_post, false);
   assert.equal(rule.day_of_month, 25);
   assert.equal(rule.last_run_at, null);
+});
+
+test("schema version 1 clients never receive goal tables", async () => {
+  const userId = await newUser("Old client");
+  const { changes } = await sync.pull(userId, 0, 1);
+  assert.equal("goals" in changes, false);
+  assert.equal("goal_contributions" in changes, false);
+});
+
+test("shared goals and contributions converge with server-owned authorship", async () => {
+  const owner = await newUser("Owner");
+  const member = await newUser("Member");
+  const family = await spaces.create(owner, "Family", "NGN");
+  const { code } = await spaces.createInvite(owner, family.id);
+  await spaces.join(member, code);
+
+  const goalId = randomUUID();
+  const contributionId = randomUUID();
+  await sync.push(owner, {
+    goals: {
+      created: [{
+        id: goalId, space_id: family.id, created_by: member,
+        name: "  School fees  ", target_minor: 50_000_000, currency: "NGN",
+        due_at: Date.parse("2027-01-10T00:00:00Z"),
+      }],
+      updated: [], deleted: [],
+    },
+    goal_contributions: {
+      created: [{
+        id: contributionId, space_id: family.id, goal_id: goalId, created_by: member,
+        amount_minor: 5_000_000, currency: "NGN", contributed_at: Date.now(),
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0);
+
+  const pull = await sync.pull(member, 0, 2);
+  const goal = pull.changes.goals!.created.find((row) => row.id === goalId)!;
+  const contribution = pull.changes.goal_contributions!.created
+    .find((row) => row.id === contributionId)!;
+  assert.equal(goal.name, "School fees");
+  assert.equal(goal.created_by, owner);
+  assert.equal(contribution.created_by, owner);
+  assert.equal(contribution.amount_minor, 5_000_000);
+});
+
+test("goal contributions cannot cross spaces or accept invalid amounts", async () => {
+  const owner = await newUser("Owner");
+  const first = await spaces.create(owner, "First", "NGN");
+  const second = await spaces.create(owner, "Second", "NGN");
+  const goalId = randomUUID();
+
+  await sync.push(owner, {
+    goals: {
+      created: [{
+        id: goalId, space_id: first.id, name: "Rent", target_minor: 1_000_000,
+        currency: "NGN", due_at: null,
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0);
+
+  await assert.rejects(() => sync.push(owner, {
+    goal_contributions: {
+      created: [{
+        id: randomUUID(), space_id: second.id, goal_id: goalId,
+        amount_minor: 50_000, currency: "NGN", contributed_at: Date.now(),
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0), /cannot be moved to another space/);
+
+  await assert.rejects(() => sync.push(owner, {
+    goal_contributions: {
+      created: [{
+        id: randomUUID(), space_id: first.id, goal_id: goalId,
+        amount_minor: -1, currency: "NGN", contributed_at: Date.now(),
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0), /positive amount/);
+});
+
+test("viewers cannot contribute to shared goals", async () => {
+  const owner = await newUser("Owner");
+  const viewer = await newUser("Viewer");
+  const family = await spaces.create(owner, "Family", "NGN");
+  const { code } = await spaces.createInvite(owner, family.id, "viewer");
+  await spaces.join(viewer, code);
+  const goalId = randomUUID();
+  await sync.push(owner, {
+    goals: {
+      created: [{
+        id: goalId, space_id: family.id, name: "Trip", target_minor: 2_000_000,
+        currency: "NGN", due_at: null,
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0);
+
+  await assert.rejects(() => sync.push(viewer, {
+    goal_contributions: {
+      created: [{
+        id: randomUUID(), space_id: family.id, goal_id: goalId,
+        amount_minor: 10_000, currency: "NGN", contributed_at: Date.now(),
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0), /cannot make changes/);
+});
+
+test("a schema migration pull includes goals older than the last pull timestamp", async () => {
+  const owner = await newUser("Owner");
+  const family = await spaces.create(owner, "Family", "NGN");
+  const goalId = randomUUID();
+  await sync.push(owner, {
+    goals: {
+      created: [{
+        id: goalId, space_id: family.id, name: "Emergency fund",
+        target_minor: 10_000_000, currency: "NGN", due_at: null,
+      }],
+      updated: [], deleted: [],
+    },
+  }, 0);
+
+  const oldClientPull = await sync.pull(owner, 0, 1);
+  const upgraded = await sync.pull(
+    owner, oldClientPull.timestamp, 2, ["goals", "goal_contributions"]
+  );
+  assert.ok(upgraded.changes.goals!.created.some((row) => row.id === goalId));
 });
