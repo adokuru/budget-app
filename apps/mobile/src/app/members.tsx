@@ -15,10 +15,11 @@ import { space as sp, radius, CONTINUOUS, tint } from "@/theme/tokens";
 
 export default function MembersSheet() {
   const { color, type } = useTheme();
-  const { spaceId, space: current, canEdit } = useSpace();
+  const { spaceId, space: current } = useSpace();
   const { user } = useAuth();
   const [members, setMembers] = useState<Member[] | null>(null);
   const [code, setCode] = useState<string | null>(null);
+  const [inviteRole, setInviteRole] = useState<"member" | "viewer">("member");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -39,7 +40,7 @@ export default function MembersSheet() {
     setBusy(true);
     setError(null);
     try {
-      const res = await spacesApi.invite(spaceId);
+      const res = await spacesApi.invite(spaceId, inviteRole);
       setCode(res.code);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
@@ -72,6 +73,25 @@ export default function MembersSheet() {
         },
       ]
     );
+  }
+
+  function changeAccess(member: Member) {
+    const update = async (role: "member" | "viewer") => {
+      try {
+        await spacesApi.updateMemberRole(spaceId, member.id, role);
+        await sync();
+        await load();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not change their access");
+      }
+    };
+
+    Alert.alert(`Access for ${member.name}`, "Choose what they can do in this space.", [
+      { text: "Can edit", onPress: () => void update("member") },
+      { text: "View only", onPress: () => void update("viewer") },
+      { text: "Cancel", style: "cancel" },
+    ]);
   }
 
   return (
@@ -116,9 +136,22 @@ export default function MembersSheet() {
               </View>
 
               {isOwner && m.id !== user?.id && (
-                <Pressable onPress={() => remove(m)} hitSlop={10}>
-                  <Text style={{ ...type.rowTitle, color: color.danger }}>Remove</Text>
-                </Pressable>
+                <View style={{ alignItems: "flex-end", gap: sp.sm }}>
+                  <Pressable
+                    accessibilityLabel={`Change access for ${m.name}`}
+                    onPress={() => changeAccess(m)}
+                    hitSlop={10}
+                  >
+                    <Text style={{ ...type.rowTitle, color: color.accent }}>Change access</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel={`Remove ${m.name}`}
+                    onPress={() => remove(m)}
+                    hitSlop={10}
+                  >
+                    <Text style={{ ...type.rowTitle, color: color.danger }}>Remove</Text>
+                  </Pressable>
+                </View>
               )}
             </View>
           ))}
@@ -127,20 +160,24 @@ export default function MembersSheet() {
 
       {error && <Text selectable style={{ ...type.rowSub, color: color.danger }}>{error}</Text>}
 
-      {canEdit && (code ? (
+      {isOwner && (code ? (
         <View
           style={{
             backgroundColor: color.surfaceStrong, borderRadius: radius.card, ...CONTINUOUS,
             padding: sp.lg, gap: sp.sm, alignItems: "center",
           }}
         >
-          <Text style={{ ...type.eyebrow, color: "#FFFFFF99" }}>Invite code · expires in 7 days</Text>
+          <Text style={{ ...type.eyebrow, color: "#FFFFFF99" }}>
+            {inviteRole === "member" ? "Can edit" : "View only"} · expires in 7 days
+          </Text>
           <Text selectable style={{ ...type.screenTitle, color: color.onStrong, letterSpacing: 6 }}>
             {code}
           </Text>
           <Pressable
             onPress={() =>
-              Share.share({ message: `Use code ${code} to join ${current.name} on Kobo Tracker.` })
+              Share.share({
+                message: `Use code ${code} to join ${current.name} on Kobo Tracker with ${inviteRole === "member" ? "edit" : "view-only"} access.`,
+              })
             }
             style={{
               flexDirection: "row", alignItems: "center", gap: 6,
@@ -154,20 +191,49 @@ export default function MembersSheet() {
           </Pressable>
         </View>
       ) : (
-        <Pressable
-          onPress={invite}
-          disabled={busy}
-          style={{
-            height: 46, borderRadius: radius.pill, alignItems: "center", justifyContent: "center",
-            backgroundColor: color.accent,
-          }}
-        >
-          {busy ? <ActivityIndicator color={color.onAccent} /> : (
-            <Text style={{ ...type.body, fontWeight: "600", color: color.onAccent }}>
-              Invite someone
-            </Text>
-          )}
-        </Pressable>
+        <View style={{ gap: sp.md }}>
+          <Text style={{ ...type.eyebrow, color: color.faint }}>New member access</Text>
+          <View style={{ flexDirection: "row", gap: sp.sm }}>
+            {(["member", "viewer"] as const).map((role) => {
+              const selected = inviteRole === role;
+              const label = role === "member" ? "Can edit" : "View only";
+              return (
+                <Pressable
+                  key={role}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${label} access`}
+                  onPress={() => setInviteRole(role)}
+                  style={{
+                    flex: 1, padding: sp.base, borderRadius: radius.card,
+                    borderWidth: 1, borderColor: selected ? color.accent : color.hairline,
+                    backgroundColor: selected ? color.chipAlt : color.surface,
+                  }}
+                >
+                  <Text style={{ ...type.rowTitle, fontWeight: "700", color: color.ink }}>{label}</Text>
+                  <Text style={{ ...type.rowSub, color: color.faint, marginTop: sp.xs }}>
+                    {role === "member" ? "Add and change entries" : "See records without changes"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable
+            accessibilityLabel="Create invite code"
+            onPress={invite}
+            disabled={busy}
+            style={{
+              height: 46, borderRadius: radius.pill, alignItems: "center", justifyContent: "center",
+              backgroundColor: color.accent,
+            }}
+          >
+            {busy ? <ActivityIndicator color={color.onAccent} /> : (
+              <Text style={{ ...type.body, fontWeight: "600", color: color.onAccent }}>
+                Invite someone
+              </Text>
+            )}
+          </Pressable>
+        </View>
       ))}
     </ScrollView>
   );

@@ -79,7 +79,7 @@ export default function AddEntrySheet() {
 
   async function save() {
     if (occurredAt.getTime() > Date.now()) {
-      show("Entries cannot be dated in the future", { tone: "error" });
+      show("Choose today or an earlier date", { tone: "error" });
       return;
     }
     if (!canSave) return;
@@ -132,11 +132,11 @@ export default function AddEntrySheet() {
       "Delete this entry?",
       entry.recurringRuleId
         ? "This removes only this occurrence. The recurring item stays active."
-        : "This entry will be removed from this shared budget.",
+        : "This entry will be removed from your budget.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Confirm deletion",
+          text: "Yes, delete entry",
           style: "destructive",
           onPress: () => void database.write(() => entry.markAsDeleted()).then(() => {
             show("Entry deleted", { tone: "success" });
@@ -232,7 +232,7 @@ export default function AddEntrySheet() {
             return (
               <Pressable
                 key={t}
-                accessibilityLabel={`${t === "expense" ? "Expense" : "Income"} entry`}
+                accessibilityLabel={`Set entry type to ${t}`}
                 onPress={() => {
                   Haptics.selectionAsync();
                   setKind(t);
@@ -311,7 +311,7 @@ export default function AddEntrySheet() {
 
         {entry?.recurringRuleId && (
           <Text style={{ ...type.rowSub, color: color.faint }}>
-            Changes apply to this occurrence only, not the recurring item.
+            This change only affects this entry. The recurring item stays the same.
           </Text>
         )}
 

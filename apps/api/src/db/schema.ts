@@ -76,6 +76,7 @@ export const invites = pgTable(
     id: id(),
     spaceId: text("space_id").notNull().references(() => spaces.id),
     code: text("code").notNull(),
+    role: text("role", { enum: ["member", "viewer"] }).notNull().default("member"),
     createdBy: text("created_by").notNull().references(() => users.id),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     acceptedBy: text("accepted_by").references(() => users.id),

@@ -180,16 +180,16 @@ export class SyncService {
 
         for (const row of batch.created) {
           const spaceId = String(table === "spaces" ? row.id : row.space_id);
-          this.assertCanWrite(roles.get(spaceId), table, spaceId);
+          this.assertCanWrite(roles.get(spaceId), table);
           await this.assertNotStale(tx, table, String(row.id), since);
           await this.upsert(tx, table, row, userId, true);
         }
 
         for (const row of batch.updated) {
           const spaceId = await this.spaceIdFor(tx, table, String(row.id));
-          this.assertCanWrite(roles.get(spaceId), table, spaceId);
+          this.assertCanWrite(roles.get(spaceId), table);
           if (table !== "spaces" && String(row.space_id) !== spaceId) {
-            throw new ForbiddenException("A synced record cannot move between spaces");
+            throw new ForbiddenException("This item cannot be moved to another space");
           }
           await this.assertNotStale(tx, table, String(row.id), since);
           await this.upsert(tx, table, row, userId, false);
@@ -197,7 +197,7 @@ export class SyncService {
 
         for (const id of batch.deleted) {
           const spaceId = await this.spaceIdFor(tx, table, id);
-          this.assertCanWrite(roles.get(spaceId), table, spaceId);
+          this.assertCanWrite(roles.get(spaceId), table);
           await this.assertNotStale(tx, table, id, since);
           await tx.execute(
             sql`update ${sql.identifier(table)}
@@ -211,13 +211,14 @@ export class SyncService {
 
   private assertCanWrite(
     role: "owner" | "member" | "viewer" | undefined,
-    table: SyncTableName,
-    spaceId: string
+    table: SyncTableName
   ): void {
     const allowed = table === "spaces" ? role === "owner" : role === "owner" || role === "member";
     if (!allowed) {
       throw new ForbiddenException(
-        role ? "Viewer memberships are read-only" : `Not a member of space ${spaceId}`
+        role
+          ? "You can view this space, but you cannot make changes"
+          : "You no longer have access to this space"
       );
     }
   }
@@ -229,7 +230,7 @@ export class SyncService {
         sql`select ${column} as space_id from ${sql.identifier(table)} where id = ${id}`
       )
     ).rows as { space_id: string }[];
-    if (!rows[0]) throw new ConflictException("The record no longer exists");
+    if (!rows[0]) throw new ConflictException("This item no longer exists");
     return rows[0].space_id;
   }
 

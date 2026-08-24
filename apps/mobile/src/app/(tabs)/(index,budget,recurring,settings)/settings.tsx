@@ -182,7 +182,7 @@ function AccountSection() {
       "This removes your account and personal data permanently. Shared spaces you do not own stay with their other members. This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Confirm deletion", style: "destructive", onPress: () => void deleteAccount() },
+        { text: "Yes, delete account", style: "destructive", onPress: () => void deleteAccount() },
       ]
     );
   };

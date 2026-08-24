@@ -101,7 +101,7 @@ tags:
       text: "Delete entry"
     direction: DOWN
 - tapOn: "Delete entry"
-- tapOn: "Confirm deletion"
+- tapOn: "Yes, delete entry"
 - assertNotVisible: "Edit Smoke corrected"
 - tapOn:
     id: "BackButton"
@@ -158,7 +158,7 @@ tags:
       text: "Delete recurring item"
     direction: DOWN
 - tapOn: "Delete recurring item"
-- tapOn: "Confirm deletion"
+- tapOn: "Yes, delete item"
 - assertNotVisible: "Bills & PHCN"
 
 # Cleanup keeps repeated local runs isolated.
@@ -168,7 +168,7 @@ tags:
       text: "Delete account"
     direction: DOWN
 - tapOn: "Delete account"
-- tapOn: "Confirm deletion"
+- tapOn: "Yes, delete account"
 - extendedWaitUntil:
     visible: ".*(Know what you can spend|Welcome back).*"
     timeout: 15000

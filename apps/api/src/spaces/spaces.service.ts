@@ -55,13 +55,13 @@ export class SpacesService {
   }
 
   /** A 6-character code, short enough to send over WhatsApp. */
-  async createInvite(userId: string, spaceId: string) {
-    await this.assertRole(userId, spaceId, ["owner", "member"]);
+  async createInvite(userId: string, spaceId: string, role: "member" | "viewer" = "member") {
+    await this.assertRole(userId, spaceId, ["owner"]);
     const code = newInviteCode();
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
 
     await this.db.insert(invites).values({
-      id: randomUUID(), spaceId, code, createdBy: userId, expiresAt,
+      id: randomUUID(), spaceId, code, role, createdBy: userId, expiresAt,
     });
     return { code, expiresAt };
   }
@@ -80,11 +80,11 @@ export class SpacesService {
       if (existing) {
         // Rejoining after removal reactivates rather than duplicating.
         await tx.update(memberships)
-          .set({ revokedAt: null, deletedAt: null, updatedAt: new Date() })
+          .set({ role: invite.role, revokedAt: null, deletedAt: null, updatedAt: new Date() })
           .where(eq(memberships.id, existing.id));
       } else {
         await tx.insert(memberships).values({
-          id: randomUUID(), userId, spaceId: invite.spaceId, role: "member",
+          id: randomUUID(), userId, spaceId: invite.spaceId, role: invite.role,
         });
       }
       await tx.update(invites)
@@ -93,7 +93,7 @@ export class SpacesService {
     });
 
     const space = await this.db.query.spaces.findFirst({ where: eq(spaces.id, invite.spaceId) });
-    return { id: space!.id, name: space!.name, baseCurrency: space!.baseCurrency, role: "member" };
+    return { id: space!.id, name: space!.name, baseCurrency: space!.baseCurrency, role: invite.role };
   }
 
   /**
@@ -109,6 +109,22 @@ export class SpacesService {
     await this.db.update(memberships)
       .set({ revokedAt: new Date(), updatedAt: new Date() })
       .where(and(eq(memberships.spaceId, spaceId), eq(memberships.userId, targetUserId)));
+  }
+
+  async updateMemberRole(
+    actorId: string,
+    spaceId: string,
+    targetUserId: string,
+    role: "member" | "viewer"
+  ) {
+    await this.assertRole(actorId, spaceId, ["owner"]);
+    const target = await this.assertMember(targetUserId, spaceId);
+    if (target.role === "owner") throw new BadRequestException("Owner access cannot be changed");
+
+    await this.db.update(memberships)
+      .set({ role, updatedAt: new Date() })
+      .where(eq(memberships.id, target.id));
+    return { role };
   }
 
   private async assertMember(userId: string, spaceId: string) {

@@ -36,6 +36,14 @@ export const joinSchema = z.object({
   code: z.string().length(6).transform((s) => s.toUpperCase()),
 });
 
+export const createInviteSchema = z.object({
+  role: z.enum(["member", "viewer"]).default("member"),
+});
+
+export const updateMemberRoleSchema = z.object({
+  role: z.enum(["member", "viewer"]),
+});
+
 export const createSpaceSchema = z.object({
   name: z.string().min(1).max(60).transform((s) => s.trim()),
   baseCurrency: z.enum(["NGN", "USD", "CAD", "EUR"]),

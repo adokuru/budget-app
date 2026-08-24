@@ -150,9 +150,15 @@ export const spacesApi = {
   create: (name: string, baseCurrency: string) =>
     api<SpaceSummary>("/spaces", { method: "POST", body: { name, baseCurrency } }),
   members: (id: string) => api<Member[]>(`/spaces/${id}/members`),
-  invite: (id: string) =>
-    api<{ code: string; expiresAt: string }>(`/spaces/${id}/invites`, { method: "POST" }),
+  invite: (id: string, role: "member" | "viewer") =>
+    api<{ code: string; expiresAt: string }>(`/spaces/${id}/invites`, {
+      method: "POST", body: { role },
+    }),
   join: (code: string) => api<SpaceSummary>("/spaces/join", { method: "POST", body: { code } }),
   removeMember: (spaceId: string, userId: string) =>
     api<void>(`/spaces/${spaceId}/members/${userId}`, { method: "DELETE" }),
+  updateMemberRole: (spaceId: string, userId: string, role: "member" | "viewer") =>
+    api<{ role: "member" | "viewer" }>(`/spaces/${spaceId}/members/${userId}`, {
+      method: "PATCH", body: { role },
+    }),
 };

@@ -170,7 +170,7 @@ export default function RecurringRuleSheet() {
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Confirm deletion", style: "destructive",
+          text: "Yes, delete item", style: "destructive",
           onPress: () => void database.write(() => rule.markAsDeleted()).then(() => {
             show("Recurring item deleted", { tone: "success" });
             syncQuietly();

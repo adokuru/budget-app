@@ -215,7 +215,7 @@ test("viewer memberships cannot create, update, or delete financial rows", async
 
   const viewerPull = await sync.pull(viewer, 0);
   const row = viewerPull.changes.transactions!.created.find((t) => t.id === txnId)!;
-  const denied = /read-only/;
+  const denied = /cannot make changes/;
 
   await assert.rejects(() => sync.push(viewer, {
     transactions: {
@@ -254,7 +254,7 @@ test("a user cannot delete a guessed record outside their spaces", async () => {
 
   await assert.rejects(() => sync.push(stranger, {
     transactions: { created: [], updated: [], deleted: [txnId] },
-  }, 0), /Not a member/);
+  }, 0), /no longer have access/);
 });
 
 test("pushing into a space you do not belong to is refused", async () => {
@@ -275,7 +275,7 @@ test("pushing into a space you do not belong to is refused", async () => {
           updated: [], deleted: [],
         },
       }, 0),
-    /Not a member/
+    /no longer have access/
   );
 });
 
@@ -373,7 +373,7 @@ test("a removed member can no longer push into the space", async () => {
           updated: [], deleted: [],
         },
       }, 0),
-    /Not a member/
+    /no longer have access/
   );
 });
 
@@ -399,6 +399,34 @@ test("an expired invite is refused", async () => {
 
   await db.execute(sql`update invites set expires_at = now() - interval '1 day' where code = ${code}`);
   await assert.rejects(() => spaces.join(b, code), /invalid or has expired/);
+});
+
+test("an owner can invite someone with view-only access", async () => {
+  const owner = await newUser("Owner");
+  const viewer = await newUser("Viewer");
+  const family = await spaces.create(owner, "Family", "NGN");
+  const { code } = await spaces.createInvite(owner, family.id, "viewer");
+
+  const joined = await spaces.join(viewer, code);
+  assert.equal(joined.role, "viewer");
+  await assert.rejects(
+    () => spaces.createInvite(viewer, family.id, "member"),
+    /do not have permission/
+  );
+
+  await spaces.updateMemberRole(owner, family.id, viewer, "member");
+  assert.equal(
+    (await spaces.members(owner, family.id)).find((member) => member.id === viewer)?.role,
+    "member"
+  );
+  await assert.rejects(
+    () => spaces.updateMemberRole(viewer, family.id, owner, "viewer"),
+    /do not have permission/
+  );
+
+  await spaces.removeMember(owner, family.id, viewer);
+  const editorInvite = await spaces.createInvite(owner, family.id, "member");
+  assert.equal((await spaces.join(viewer, editorInvite.code)).role, "member");
 });
 
 test("a non-owner cannot remove members", async () => {

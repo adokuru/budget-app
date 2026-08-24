@@ -1,10 +1,12 @@
 import {
-  Body, Controller, Delete, Get, Param, Post, UseGuards, HttpCode,
+  Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, HttpCode,
 } from "@nestjs/common";
 import { SpacesService } from "./spaces.service";
 import { Auth, JwtGuard } from "../auth/jwt.guard";
 import { ZodBody } from "../auth/zod.pipe";
-import { createSpaceSchema, joinSchema } from "../auth/dto";
+import {
+  createInviteSchema, createSpaceSchema, joinSchema, updateMemberRoleSchema,
+} from "../auth/dto";
 import type { AccessClaims } from "../auth/tokens";
 
 @Controller("spaces")
@@ -31,8 +33,12 @@ export class SpacesController {
   }
 
   @Post(":id/invites")
-  invite(@Auth() claims: AccessClaims, @Param("id") id: string) {
-    return this.spaces.createInvite(claims.sub, id);
+  invite(
+    @Auth() claims: AccessClaims,
+    @Param("id") id: string,
+    @Body(new ZodBody(createInviteSchema)) body: { role: "member" | "viewer" }
+  ) {
+    return this.spaces.createInvite(claims.sub, id, body.role);
   }
 
   @Post("join")
@@ -49,5 +55,15 @@ export class SpacesController {
     @Param("userId") userId: string
   ) {
     await this.spaces.removeMember(claims.sub, id, userId);
+  }
+
+  @Patch(":id/members/:userId")
+  updateMemberRole(
+    @Auth() claims: AccessClaims,
+    @Param("id") id: string,
+    @Param("userId") userId: string,
+    @Body(new ZodBody(updateMemberRoleSchema)) body: { role: "member" | "viewer" }
+  ) {
+    return this.spaces.updateMemberRole(claims.sub, id, userId, body.role);
   }
 }

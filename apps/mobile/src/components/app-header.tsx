@@ -27,10 +27,10 @@ export function AppHeader({
     idle: undefined,
     ok: undefined,
     syncing: "Syncing",
-    offline: "Offline · saved on device",
-    conflict: "Conflict",
+    offline: "Offline. Saved on phone.",
+    conflict: "Changes not synced",
     unauthenticated: "Sign in again",
-    error: "Sync issue",
+    error: "Could not sync",
   }[syncStatus.status];
 
   return (
@@ -74,7 +74,11 @@ export function AppHeader({
       {syncLabel && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={syncStatus.status === "syncing" ? syncLabel : `${syncLabel}. Tap to retry.`}
+          accessibilityLabel={syncStatus.status === "syncing"
+            ? syncLabel
+            : syncStatus.status === "unauthenticated"
+              ? "Session expired. Tap to sign in again."
+              : `${syncLabel}. Tap to try again.`}
           disabled={syncStatus.status === "syncing"}
           onPress={() => {
             if (syncStatus.status === "unauthenticated") void signOut();
