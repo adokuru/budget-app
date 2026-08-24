@@ -8,11 +8,13 @@ import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { spacesApi, type Member } from "@/lib/api";
 import { sync } from "@/lib/sync";
+import { useTheme } from "@/hooks/use-theme";
 import { useSpace } from "@/state/space";
 import { useAuth } from "@/state/auth";
-import { color, space as sp, radius, type, CONTINUOUS, tint } from "@/theme/tokens";
+import { space as sp, radius, CONTINUOUS, tint } from "@/theme/tokens";
 
 export default function MembersSheet() {
+  const { color, type } = useTheme();
   const { spaceId, space: current } = useSpace();
   const { user } = useAuth();
   const [members, setMembers] = useState<Member[] | null>(null);
@@ -128,12 +130,12 @@ export default function MembersSheet() {
       {code ? (
         <View
           style={{
-            backgroundColor: color.ink, borderRadius: radius.card, ...CONTINUOUS,
+            backgroundColor: color.surfaceStrong, borderRadius: radius.card, ...CONTINUOUS,
             padding: sp.lg, gap: sp.sm, alignItems: "center",
           }}
         >
-          <Text style={{ ...type.eyebrow, color: color.faint }}>Invite code · expires in 7 days</Text>
-          <Text selectable style={{ ...type.screenTitle, color: color.onAccent, letterSpacing: 6 }}>
+          <Text style={{ ...type.eyebrow, color: "#FFFFFF99" }}>Invite code · expires in 7 days</Text>
+          <Text selectable style={{ ...type.screenTitle, color: color.onStrong, letterSpacing: 6 }}>
             {code}
           </Text>
           <Pressable

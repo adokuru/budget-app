@@ -1,5 +1,6 @@
 import { Text, TextInput, View } from "react-native";
-import { color, space, radius, type, CONTINUOUS } from "@/theme/tokens";
+import { space, radius, CONTINUOUS } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 export function Field({
   label, value, onChange, secureTextEntry, keyboardType, autoComplete, onSubmit, placeholder,
@@ -13,6 +14,7 @@ export function Field({
   onSubmit?: () => void;
   placeholder?: string;
 }) {
+  const { color, type } = useTheme();
   return (
     <View style={{ gap: space.xs }}>
       {label && <Text style={type.eyebrow}>{label}</Text>}
@@ -31,6 +33,7 @@ export function Field({
         returnKeyType={onSubmit ? "go" : "next"}
         style={{
           fontSize: 15, color: color.ink,
+          backgroundColor: color.surface,
           borderWidth: 1, borderColor: color.hairline,
           borderRadius: radius.chip, ...CONTINUOUS,
           paddingHorizontal: space.base, paddingVertical: 13,

@@ -1,7 +1,8 @@
 import { Text, View, type ViewStyle } from "react-native";
 import Animated, { cubicBezier } from "react-native-reanimated";
 import { useReducedMotion } from "@/lib/motion";
-import { color, space, GUTTER, radius, shadow, type, CONTINUOUS } from "@/theme/tokens";
+import { space, GUTTER, radius, CONTINUOUS } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 const EASE_IN_OUT = cubicBezier(0.77, 0, 0.175, 1);
 
@@ -10,6 +11,7 @@ const EASE_IN_OUT = cubicBezier(0.77, 0, 0.175, 1);
  * cards — the list is the structure.
  */
 export function Rule({ full = false }: { full?: boolean }) {
+  const { color } = useTheme();
   return (
     <View
       style={{
@@ -29,6 +31,7 @@ export function Label({
   children: string;
   action?: React.ReactNode;
 }) {
+  const { type } = useTheme();
   return (
     <View
       style={{
@@ -54,7 +57,7 @@ export function Thin({
   spent,
   budget,
   tone,
-  trackColor = color.hairline,
+  trackColor,
 }: {
   spent: number;
   budget: number;
@@ -62,6 +65,7 @@ export function Thin({
   trackColor?: string;
 }) {
   const reduced = useReducedMotion();
+  const { color } = useTheme();
   const pct = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
   const fill = pct > 90 ? color.danger : pct > 72 ? color.warning : tone;
 
@@ -70,7 +74,7 @@ export function Thin({
       style={{
         height: 3,
         borderRadius: radius.pill,
-        backgroundColor: trackColor,
+        backgroundColor: trackColor ?? color.hairline,
         overflow: "hidden",
       }}
     >
@@ -101,6 +105,7 @@ export function SectionCard({
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
+  const { color, shadow } = useTheme();
   return (
     <View
       style={[
@@ -124,6 +129,7 @@ export function SectionCard({
 
 /** The emoji medallion used on transaction rows. */
 export function Emoji({ glyph, size = 36 }: { glyph: string; size?: number }) {
+  const { color } = useTheme();
   return (
     <View
       style={{
@@ -181,6 +187,7 @@ export function StatStrip({
   items: { label: string; value: React.ReactNode }[];
   bordered?: boolean;
 }) {
+  const { color, type } = useTheme();
   return (
     <View
       style={{
@@ -218,6 +225,7 @@ export function SoftBlock({
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
+  const { color } = useTheme();
   return (
     <View
       style={[

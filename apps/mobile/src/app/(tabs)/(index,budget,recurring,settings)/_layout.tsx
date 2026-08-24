@@ -1,4 +1,5 @@
 import { Stack } from "expo-router/stack";
+import { useTheme } from "@/hooks/use-theme";
 
 const TITLES: Record<string, string> = {
   index: "Home",
@@ -21,6 +22,7 @@ export const unstable_settings = {
  */
 export default function TabStackLayout({ segment }: { segment: string }) {
   const screen = segment.match(/\((.*)\)/)?.[1] ?? "index";
+  const { color } = useTheme();
 
   return (
     <Stack
@@ -28,7 +30,7 @@ export default function TabStackLayout({ segment }: { segment: string }) {
         // The design draws its own wordmark header, so the native large
         // title would be a second, competing one.
         headerShown: false,
-        contentStyle: { backgroundColor: "#FFFFFF" },
+        contentStyle: { backgroundColor: color.canvas },
       }}
     >
       <Stack.Screen name={screen} options={{ title: TITLES[screen] ?? "" }} />

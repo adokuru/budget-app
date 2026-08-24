@@ -17,11 +17,13 @@ import { AppHeader } from "@/components/app-header";
 import { Rule, Label, EmojiPlain, Row, SectionCard } from "@/components/primitives";
 import { EmptyState } from "@/components/empty-state";
 import { useToast } from "@/components/toast";
+import { useTheme } from "@/hooks/use-theme";
 import { runRecurring, confirmPending, type PendingConfirmation } from "@/lib/recurring-engine";
 import { formatRelativeDay } from "@/lib/period";
-import { color, space, GUTTER, radius, type, CONTINUOUS } from "@/theme/tokens";
+import { space, GUTTER, radius, CONTINUOUS } from "@/theme/tokens";
 
 export default function RecurringScreen() {
+  const { color, type } = useTheme();
   const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
   const { show } = useToast();
   const [pending, setPending] = useState<PendingConfirmation[]>([]);
@@ -112,7 +114,7 @@ export default function RecurringScreen() {
                         alignItems: "center", backgroundColor: color.positive,
                       }}
                     >
-                      <Text style={{ ...type.body, fontWeight: "700", color: color.onAccent }}>Landed</Text>
+                      <Text style={{ ...type.body, fontWeight: "700", color: color.onPositive }}>Landed</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => answer(p, false)}
@@ -216,6 +218,7 @@ function RuleRow({
   minor: number;
   currency: Parameters<typeof Amt>[0]["currency"];
 }) {
+  const { color, type } = useTheme();
   const isIncome = rule.kind === "income";
   return (
     <Row>

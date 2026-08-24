@@ -12,9 +12,11 @@ import {
   scheduleTestReminder,
 } from "@/lib/reminders";
 import { usePrefs } from "@/state/prefs";
-import { color, CONTINUOUS, GUTTER, radius, space, type } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
+import { CONTINUOUS, GUTTER, radius, space } from "@/theme/tokens";
 
 export default function RemindersScreen() {
+  const { color, type, scheme } = useTheme();
   const prefs = usePrefs();
   const { show } = useToast();
   const [permission, setPermission] = useState(false);
@@ -44,6 +46,7 @@ export default function RemindersScreen() {
       value={time}
       mode="time"
       display={Platform.OS === "ios" ? "compact" : "default"}
+      themeVariant={scheme}
       onChange={(_, value) => {
         setShowAndroidPicker(false);
         if (value) prefs.setReminderTime(value.getHours(), value.getMinutes());
@@ -99,7 +102,10 @@ export default function RemindersScreen() {
                 <Text style={type.rowSub}>Uses this device&apos;s local time.</Text>
               </View>
               {Platform.OS === "ios" ? timePicker : (
-                <Pressable onPress={() => setShowAndroidPicker(true)} style={chipStyle}>
+                <Pressable
+                  onPress={() => setShowAndroidPicker(true)}
+                  style={{ ...chipStyle, backgroundColor: color.chip }}
+                >
                   <Text style={{ fontSize: 13, fontWeight: "700", color: color.ink }}>
                     {formatReminderTime(prefs.reminderHour, prefs.reminderMinute)}
                   </Text>
@@ -128,10 +134,10 @@ export default function RemindersScreen() {
                     onPress={() => prefs.setRecurringReminderDaysBefore(days)}
                     style={{
                       ...chipStyle,
-                      backgroundColor: selected ? color.ink : color.chip,
+                      backgroundColor: selected ? color.surfaceStrong : color.chip,
                     }}
                   >
-                    <Text style={{ fontSize: 12, fontWeight: "700", color: selected ? color.onAccent : color.body }}>
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: selected ? color.onStrong : color.body }}>
                       {days === 0 ? "Due" : `${days}d`}
                     </Text>
                   </Pressable>
@@ -175,7 +181,6 @@ const rowStyle = {
 const chipStyle = {
   ...CONTINUOUS,
   borderRadius: radius.chip,
-  backgroundColor: color.chip,
   paddingHorizontal: space.md,
   paddingVertical: 9,
 } as const;

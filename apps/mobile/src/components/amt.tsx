@@ -1,6 +1,7 @@
 import { Text, View, type TextStyle } from "react-native";
 import { formatParts, formatMoney, type Currency } from "@budget/shared";
-import { DISPLAY_FONT, TABULAR, color } from "@/theme/tokens";
+import { DISPLAY_FONT, TABULAR } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 export type AmtSize = "sm" | "md" | "lg" | "xl";
 
@@ -34,6 +35,7 @@ export function Amt({
   signed?: boolean;
   hideFraction?: boolean;
 }) {
+  const { color } = useTheme();
   const { sign, symbol, integer, fraction } = formatParts(minor, currency);
   const s = SIZES[size];
   const fg = tone ?? color.ink;
@@ -87,6 +89,7 @@ export function AmtShort({
   tone?: string;
   size?: number;
 }) {
+  const { color } = useTheme();
   const { symbol } = formatParts(minor, currency);
   const major = Math.abs(minor) / 100;
   const label =

@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/kobo-mark.png",
     "scheme": "kobo",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.davidadokuru.kobo",
       "supportsTablet": false,
@@ -33,7 +33,11 @@
         {
           "backgroundColor": "#F6F7F3",
           "image": "./assets/images/kobo-mark.png",
-          "imageWidth": 104
+          "imageWidth": 104,
+          "dark": {
+            "backgroundColor": "#090D1A",
+            "image": "./assets/images/kobo-mark.png"
+          }
         }
       ],
       "./plugins/with-widget-container-background",

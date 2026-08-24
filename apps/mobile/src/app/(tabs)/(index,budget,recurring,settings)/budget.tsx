@@ -13,10 +13,12 @@ import { Rule, Label, Thin, EmojiPlain, Row, SectionCard } from "@/components/pr
 import { EmptyState } from "@/components/empty-state";
 import { Fab } from "@/components/fab";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
+import { useTheme } from "@/hooks/use-theme";
 import { monthStart } from "@/lib/period";
-import { color, space, type, CATEGORY_COLORS } from "@/theme/tokens";
+import { space, CATEGORY_COLORS } from "@/theme/tokens";
 
 export default function BudgetScreen() {
+  const { color, type } = useTheme();
   const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
   const since = useMemo(() => monthStart().getTime(), []);
 
@@ -175,6 +177,8 @@ export default function BudgetScreen() {
 }
 
 function Figure({ label, value }: { label: string; value: React.ReactNode }) {
+  const { type } = useTheme();
+
   return (
     <View style={{ gap: 2 }}>
       <Text style={type.statLabel}>{label}</Text>
@@ -183,9 +187,10 @@ function Figure({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-const Divider = () => (
-  <View style={{ width: 1, height: 30, backgroundColor: color.hairline }} />
-);
+function Divider() {
+  const { color } = useTheme();
+  return <View style={{ width: 1, height: 30, backgroundColor: color.hairline }} />;
+}
 
 function monthLabel(d: Date = new Date()): string {
   return d.toLocaleDateString(undefined, { month: "long" });

@@ -1,8 +1,11 @@
 import { Platform, ScrollView, Text, View } from "react-native";
 import { Label, Rule, SectionCard } from "@/components/primitives";
-import { color, CONTINUOUS, DISPLAY_FONT, GUTTER, radius, space, type } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
+import { CONTINUOUS, DISPLAY_FONT, GUTTER, radius, space } from "@/theme/tokens";
 
 export default function WidgetsScreen() {
+  const { color, type } = useTheme();
+
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
@@ -57,15 +60,17 @@ export default function WidgetsScreen() {
 }
 
 function Step({ number, text }: { number: string; text: string }) {
+  const { color, type } = useTheme();
+
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: GUTTER, paddingVertical: space.md }}>
       <View
         style={{
-          width: 28, height: 28, borderRadius: 14, backgroundColor: color.ink,
+          width: 28, height: 28, borderRadius: 14, backgroundColor: color.surfaceStrong,
           alignItems: "center", justifyContent: "center",
         }}
       >
-        <Text style={{ fontSize: 12, fontWeight: "800", color: color.onAccent }}>{number}</Text>
+        <Text style={{ fontSize: 12, fontWeight: "800", color: color.onStrong }}>{number}</Text>
       </View>
       <Text style={{ ...type.rowTitleLg, flex: 1, color: color.ink }}>{text}</Text>
     </View>

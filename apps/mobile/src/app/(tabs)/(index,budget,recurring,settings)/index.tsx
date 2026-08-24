@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { Q } from "@nozbe/watermelondb";
 import { router, useSegments } from "expo-router";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import {
   sumMinor, convertMinor, percentOf, formatWhole, FALLBACK_EMOJI,
@@ -17,9 +16,10 @@ import { Rule, Label, Thin, Emoji, EmojiPlain, Row, SectionCard, StatStrip } fro
 import { EmptyState } from "@/components/empty-state";
 import { Fab } from "@/components/fab";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
+import { useTheme } from "@/hooks/use-theme";
 import { projectedRemaining } from "@/lib/recurring-engine";
 import { monthStart, monthEnd, formatRelativeDay } from "@/lib/period";
-import { color, space, GUTTER, radius, type, CATEGORY_COLORS, CONTINUOUS } from "@/theme/tokens";
+import { space, GUTTER, radius, CATEGORY_COLORS, CONTINUOUS } from "@/theme/tokens";
 import BudgetScreen from "./budget";
 import RecurringScreen from "./recurring";
 import SettingsScreen from "./settings";
@@ -34,6 +34,7 @@ export default function TabRootScreen() {
 }
 
 function HomeScreen() {
+  const { color, type } = useTheme();
   const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared } = useSpace();
   const since = useMemo(() => monthStart().getTime(), []);
 
@@ -132,7 +133,7 @@ function HomeScreen() {
                 backgroundColor: left < 0 ? color.danger : color.brandLime,
               }}
             >
-              <Text style={{ fontSize: 10, fontWeight: "800", color: left < 0 ? color.onAccent : color.surfaceStrong }}>
+              <Text style={{ fontSize: 10, fontWeight: "800", color: left < 0 ? color.onAccent : color.onBrand }}>
                 {left < 0 ? "Over budget" : "On track"}
               </Text>
             </View>
@@ -140,7 +141,7 @@ function HomeScreen() {
         </View>
         <View style={{ marginTop: space.sm }}>
           <Amt minor={toDisplay(left)} currency={displayCurrency} size="xl"
-               tone={left < 0 ? color.danger : color.onAccent} />
+               tone={left < 0 ? color.danger : color.onStrong} />
         </View>
         <Text style={{ ...type.meta, color: "#FFFFFFA6", marginTop: space.sm }}>
           {ceiling > 0

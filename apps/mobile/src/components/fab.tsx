@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PressableScale } from "@/components/pressable-scale";
-import { color, shadow } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 /**
  * The add button, as the design places it: a small green disc floating clear
@@ -11,6 +11,7 @@ import { color, shadow } from "@/theme/tokens";
  * NativeTabs has no custom slot.
  */
 export function Fab() {
+  const { color, shadow } = useTheme();
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", right: 20, bottom: 108, zIndex: 20 }}>
       <PressableScale

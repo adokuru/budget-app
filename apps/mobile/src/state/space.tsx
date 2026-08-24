@@ -3,7 +3,7 @@ import { isCurrency, type Currency, type RateTable } from "@budget/shared";
 import { firstSpace } from "@/db/seed";
 import { View } from "react-native";
 import type { Space } from "@/db/models";
-import { color } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 import { loadRates } from "@/lib/rates";
 import { readJson, writeJson } from "@/lib/store";
 import { runRecurring } from "@/lib/recurring-engine";
@@ -133,5 +133,6 @@ const writeActiveSpaceId = (id: string) => writeJson(ACTIVE_SPACE_FILE, { id });
  * screen whose contents are not known yet.
  */
 function SpaceLoading() {
+  const { color } = useTheme();
   return <View style={{ flex: 1, backgroundColor: color.canvas }} />;
 }

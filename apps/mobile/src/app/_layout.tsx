@@ -1,6 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { AppState } from "react-native";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
 import { Stack } from "expo-router/stack";
+import { StatusBar } from "expo-status-bar";
+import * as SystemUI from "expo-system-ui";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
@@ -13,20 +16,12 @@ import { AuthProvider, useAuth } from "@/state/auth";
 import { SpaceProvider } from "@/state/space";
 import { PrefsProvider } from "@/state/prefs";
 import { syncQuietly } from "@/lib/sync";
-import { color } from "@/theme/tokens";
 import { TrackingBridge } from "@/components/tracking-bridge";
 import { useReducedMotion } from "@/lib/motion";
 import { ToastProvider } from "@/components/toast";
+import { useTheme } from "@/hooks/use-theme";
 
 SplashScreen.preventAutoHideAsync();
-
-/** Shared options for every sheet route, so they present identically. */
-const SHEET = {
-  presentation: "formSheet",
-  sheetGrabberVisible: true,
-  sheetCornerRadius: 28,
-  contentStyle: { backgroundColor: color.canvas },
-} as const;
 
 export default function RootLayout() {
   // Only the display face is loaded. Body text stays on the system face.
@@ -36,15 +31,45 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ToastProvider>
-          <PrefsProvider>
-            <AuthProvider>
-              <Gate />
-            </AuthProvider>
-          </PrefsProvider>
-        </ToastProvider>
+        <PrefsProvider>
+          <ThemedApp />
+        </PrefsProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+function ThemedApp() {
+  const { color, scheme } = useTheme();
+  const navigationTheme = useMemo(() => {
+    const base = scheme === "dark" ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: color.accent,
+        background: color.canvas,
+        card: color.canvas,
+        text: color.ink,
+        border: color.hairline,
+        notification: color.danger,
+      },
+    };
+  }, [color, scheme]);
+
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(color.canvas);
+  }, [color.canvas]);
+
+  return (
+    <ThemeProvider value={navigationTheme}>
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <ToastProvider>
+        <AuthProvider>
+          <Gate />
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
 
@@ -52,6 +77,23 @@ function Gate() {
   const { user, ready } = useAuth();
   const signedIn = Boolean(user);
   const reduced = useReducedMotion();
+  const { color } = useTheme();
+
+  const sheet = {
+    presentation: "formSheet",
+    sheetGrabberVisible: true,
+    sheetCornerRadius: 28,
+    contentStyle: { backgroundColor: color.canvas },
+  } as const;
+
+  const detailHeader = {
+    headerShown: true,
+    headerShadowVisible: false,
+    headerBackButtonDisplayMode: "minimal",
+    headerTintColor: color.ink,
+    headerStyle: { backgroundColor: color.canvas },
+    contentStyle: { backgroundColor: color.canvas },
+  } as const;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -77,7 +119,11 @@ function Gate() {
   */
   return (
     <Body signedIn={signedIn}>
-      <Stack screenOptions={{ headerShown: false, animation: reduced ? "fade" : "default" }}>
+      <Stack screenOptions={{
+        headerShown: false,
+        animation: reduced ? "fade" : "default",
+        contentStyle: { backgroundColor: color.canvas },
+      }}>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
@@ -87,46 +133,34 @@ function Gate() {
           <Stack.Screen
             name="currency"
             options={{
-              headerShown: true,
+              ...detailHeader,
               title: "Currency",
-              headerShadowVisible: false,
-              headerBackButtonDisplayMode: "minimal",
-              headerTintColor: color.ink,
-              headerStyle: { backgroundColor: color.canvas },
             }}
           />
           <Stack.Screen
             name="reminders"
             options={{
-              headerShown: true,
+              ...detailHeader,
               title: "Reminders",
-              headerShadowVisible: false,
-              headerBackButtonDisplayMode: "minimal",
-              headerTintColor: color.ink,
-              headerStyle: { backgroundColor: color.canvas },
             }}
           />
           <Stack.Screen
             name="widgets"
             options={{
-              headerShown: true,
+              ...detailHeader,
               title: "Widgets",
-              headerShadowVisible: false,
-              headerBackButtonDisplayMode: "minimal",
-              headerTintColor: color.ink,
-              headerStyle: { backgroundColor: color.canvas },
             }}
           />
           {/*
             Sheets are routes, not components: native presentation, native
             detents, native dismiss gesture. No sheet library in the app.
           */}
-          <Stack.Screen name="add-expense" options={{ ...SHEET, sheetAllowedDetents: [0.66, 0.95], sheetInitialDetentIndex: "last" }} />
-          <Stack.Screen name="converter" options={{ ...SHEET, sheetAllowedDetents: [0.58] }} />
-          <Stack.Screen name="budget-editor" options={{ ...SHEET, sheetAllowedDetents: [0.62] }} />
-          <Stack.Screen name="recurring-rule" options={{ ...SHEET, sheetAllowedDetents: [0.8, 0.95] }} />
-          <Stack.Screen name="spaces" options={{ ...SHEET, sheetAllowedDetents: [0.6] }} />
-          <Stack.Screen name="members" options={{ ...SHEET, sheetAllowedDetents: [0.7] }} />
+          <Stack.Screen name="add-expense" options={{ ...sheet, sheetAllowedDetents: [0.66, 0.95], sheetInitialDetentIndex: "last" }} />
+          <Stack.Screen name="converter" options={{ ...sheet, sheetAllowedDetents: [0.58] }} />
+          <Stack.Screen name="budget-editor" options={{ ...sheet, sheetAllowedDetents: [0.62] }} />
+          <Stack.Screen name="recurring-rule" options={{ ...sheet, sheetAllowedDetents: [0.8, 0.95] }} />
+          <Stack.Screen name="spaces" options={{ ...sheet, sheetAllowedDetents: [0.6] }} />
+          <Stack.Screen name="members" options={{ ...sheet, sheetAllowedDetents: [0.7] }} />
         </Stack.Protected>
       </Stack>
     </Body>

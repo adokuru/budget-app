@@ -1,11 +1,14 @@
-import { createContext, use, useState, type ReactNode } from "react";
+import { createContext, use, useEffect, useState, type ReactNode } from "react";
+import { Appearance } from "react-native";
 import { readJson, writeJson } from "@/lib/store";
+import type { AppearancePreference } from "@/theme/tokens";
 
 /**
  * Device-local preferences. Deliberately not synced — "hide decimals" is about
  * this phone, not about the household's books.
  */
 export type Prefs = {
+  appearance: AppearancePreference;
   hideDecimals: boolean;
   showBaseCurrency: boolean;
   haptics: boolean;
@@ -19,6 +22,7 @@ export type Prefs = {
 };
 
 const DEFAULTS: Prefs = {
+  appearance: "system",
   hideDecimals: true,       // nobody counts kobo
   showBaseCurrency: false,
   haptics: true,
@@ -34,6 +38,7 @@ const DEFAULTS: Prefs = {
 const FILE = "prefs-v1.json";
 
 type PrefsValue = Prefs & {
+  setAppearance: (appearance: AppearancePreference) => void;
   setHideDecimals: (v: boolean) => void;
   setShowBaseCurrency: (v: boolean) => void;
   setHaptics: (v: boolean) => void;
@@ -59,6 +64,10 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
     ...(readJson<Partial<Prefs>>(FILE) ?? {}),
   }));
 
+  useEffect(() => {
+    Appearance.setColorScheme(prefs.appearance === "system" ? "unspecified" : prefs.appearance);
+  }, [prefs.appearance]);
+
   const update = (patch: Partial<Prefs>) => {
     setPrefs((prev) => {
       const next = { ...prev, ...patch };
@@ -71,6 +80,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
     <PrefsContext
       value={{
         ...prefs,
+        setAppearance: (appearance) => update({ appearance }),
         setHideDecimals: (v) => update({ hideDecimals: v }),
         setShowBaseCurrency: (v) => update({ showBaseCurrency: v }),
         setHaptics: (v) => update({ haptics: v }),

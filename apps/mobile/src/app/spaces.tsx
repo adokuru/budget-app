@@ -9,10 +9,12 @@ import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { CURRENCIES, CURRENCY_CODES, type Currency } from "@budget/shared";
 import { spacesApi, type SpaceSummary } from "@/lib/api";
 import { sync } from "@/lib/sync";
+import { useTheme } from "@/hooks/use-theme";
 import { useSpace } from "@/state/space";
-import { color, space as sp, radius, type, CONTINUOUS } from "@/theme/tokens";
+import { space as sp, radius, CONTINUOUS } from "@/theme/tokens";
 
 export default function SpacesSheet() {
+  const { color, type } = useTheme();
   const { spaceId, switchSpace } = useSpace();
   const [spaces, setSpaces] = useState<SpaceSummary[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -21,6 +23,17 @@ export default function SpacesSheet() {
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState<Currency>("NGN");
   const [code, setCode] = useState("");
+  const inputStyle = {
+    ...type.body,
+    color: color.ink,
+    backgroundColor: color.surface,
+    borderWidth: 1,
+    borderColor: color.hairline,
+    borderRadius: radius.chip,
+    ...CONTINUOUS,
+    paddingHorizontal: sp.base,
+    paddingVertical: 14,
+  } as const;
 
   const load = async () => {
     try {
@@ -107,7 +120,7 @@ export default function SpacesSheet() {
             value={name}
             onChangeText={setName}
             placeholder="Family"
-            placeholderTextColor={color.hairline}
+            placeholderTextColor={color.fainter}
             style={inputStyle}
           />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: sp.sm }}>
@@ -118,10 +131,10 @@ export default function SpacesSheet() {
                 style={{
                   height: 34, paddingHorizontal: sp.md, borderRadius: radius.pill,
                   alignItems: "center", justifyContent: "center",
-                  backgroundColor: c === currency ? color.ink : color.hairline,
+                  backgroundColor: c === currency ? color.surfaceStrong : color.hairline,
                 }}
               >
-                <Text style={{ ...type.rowTitle, color: c === currency ? color.onAccent : color.ink }}>
+                <Text style={{ ...type.rowTitle, color: c === currency ? color.onStrong : color.ink }}>
                   {CURRENCIES[c].symbol} {c}
                 </Text>
               </Pressable>
@@ -143,7 +156,7 @@ export default function SpacesSheet() {
             value={code}
             onChangeText={(t) => setCode(t.toUpperCase().slice(0, 6))}
             placeholder="ABC123"
-            placeholderTextColor={color.hairline}
+            placeholderTextColor={color.fainter}
             autoCapitalize="characters"
             autoCorrect={false}
             style={[inputStyle, { letterSpacing: 4, textAlign: "center", fontSize: 22 }]}
@@ -160,21 +173,10 @@ export default function SpacesSheet() {
   );
 }
 
-const inputStyle = {
-  ...type.body,
-  color: color.ink,
-  backgroundColor: color.surface,
-  borderWidth: 1,
-  borderColor: color.hairline,
-  borderRadius: radius.chip,
-  ...CONTINUOUS,
-  paddingHorizontal: sp.base,
-  paddingVertical: 14,
-} as const;
-
 function Primary({
   label, onPress, busy, disabled,
 }: { label: string; onPress: () => void; busy?: boolean; disabled?: boolean }) {
+  const { color, type } = useTheme();
   const off = Boolean(disabled) || Boolean(busy);
   return (
     <Pressable
@@ -195,6 +197,8 @@ function Primary({
 }
 
 function Secondary({ label, onPress }: { label: string; onPress: () => void }) {
+  const { color, type } = useTheme();
+
   return (
     <Pressable
       onPress={onPress}

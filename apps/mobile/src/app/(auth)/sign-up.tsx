@@ -8,9 +8,11 @@ import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { useAuth } from "@/state/auth";
 import { Field } from "@/components/field";
 import { Brand } from "@/components/logo";
-import { color, space, GUTTER, radius, type, CONTINUOUS, DISPLAY_FONT } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
+import { space, GUTTER, radius, CONTINUOUS, DISPLAY_FONT } from "@/theme/tokens";
 
 export default function SignUpScreen() {
+  const { color, type } = useTheme();
   const { signUp } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -72,7 +74,7 @@ export default function SignUpScreen() {
           style={{
             height: 50, borderRadius: radius.card, ...CONTINUOUS,
             alignItems: "center", justifyContent: "center", marginTop: space.sm,
-            backgroundColor: canSubmit ? color.accent : color.hairline,
+            backgroundColor: canSubmit || busy ? color.accent : color.hairline,
           }}
         >
           {busy

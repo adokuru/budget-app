@@ -3,7 +3,8 @@ import * as Haptics from "expo-haptics";
 import { FALLBACK_EMOJI } from "@budget/shared";
 import type { Category } from "@/db/models";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
-import { color, space, GUTTER, radius, type } from "@/theme/tokens";
+import { space, GUTTER, radius } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 /**
  * A single horizontal row of emoji chips, keeping the keypad in place.
@@ -15,6 +16,7 @@ export function CategoryPicker({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const { color, type } = useTheme();
   return (
     <ScrollView
       horizontal

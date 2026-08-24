@@ -3,7 +3,8 @@ import { Link } from "expo-router";
 import Animated, { Easing, FadeIn, FadeInDown } from "react-native-reanimated";
 import { PressableScale } from "@/components/pressable-scale";
 import { useReducedMotion } from "@/lib/motion";
-import { color, space, radius, type } from "@/theme/tokens";
+import { space, radius } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 const EMPTY_ENTER = FadeInDown.duration(220).easing(EASE_OUT);
@@ -19,6 +20,7 @@ export function EmptyState({
   action?: { label: string; href: string };
 }) {
   const reduced = useReducedMotion();
+  const { color, type } = useTheme();
 
   return (
     <Animated.View

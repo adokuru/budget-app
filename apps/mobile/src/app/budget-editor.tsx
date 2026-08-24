@@ -14,10 +14,12 @@ import { Keypad } from "@/components/keypad";
 import { CategoryPicker } from "@/components/category-picker";
 import { Amt } from "@/components/amt";
 import { useToast } from "@/components/toast";
+import { useTheme } from "@/hooks/use-theme";
 import { monthStart } from "@/lib/period";
-import { color, space, type } from "@/theme/tokens";
+import { space } from "@/theme/tokens";
 
 export default function BudgetEditorSheet() {
+  const { color, type } = useTheme();
   const { spaceId, displayCurrency } = useSpace();
   const { show } = useToast();
   const periodStart = useMemo(() => monthStart().getTime(), []);

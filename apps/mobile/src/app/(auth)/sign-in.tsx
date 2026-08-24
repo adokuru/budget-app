@@ -12,7 +12,8 @@ import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { useAuth } from "@/state/auth";
 import { Field } from "@/components/field";
 import { Brand } from "@/components/logo";
-import { color, space, GUTTER, radius, type, CONTINUOUS, DISPLAY_FONT } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
+import { space, GUTTER, radius, CONTINUOUS, DISPLAY_FONT } from "@/theme/tokens";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -27,6 +28,7 @@ const GOOGLE_MARK = `data:image/svg+xml;utf8,${encodeURIComponent(
 )}`;
 
 export default function SignInScreen() {
+  const { color, type, scheme } = useTheme();
   const { signIn, signInWithApple, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -169,13 +171,13 @@ export default function SignInScreen() {
           style={{
             height: 50, borderRadius: radius.card, ...CONTINUOUS,
             alignItems: "center", justifyContent: "center", marginTop: space.sm,
-            backgroundColor: canSubmit ? color.ink : color.hairline,
+            backgroundColor: canSubmit || busy === "email" ? color.surfaceStrong : color.hairline,
           }}
         >
           {busy === "email"
-            ? <ActivityIndicator color={color.onAccent} />
+            ? <ActivityIndicator color={color.onStrong} />
             : <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 15,
-                             color: canSubmit ? color.onAccent : color.faint }}>
+                             color: canSubmit ? color.onStrong : color.faint }}>
                 Sign in
               </Text>}
         </Pressable>
@@ -194,12 +196,12 @@ export default function SignInScreen() {
           style={{
             height: 50, borderRadius: radius.chip, ...CONTINUOUS,
             flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12,
-            backgroundColor: color.surface, borderWidth: 1, borderColor: "#747775",
+            backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#747775",
             opacity: busy !== null || !googleRequest ? 0.55 : 1,
           }}
         >
           {busy === "google"
-            ? <ActivityIndicator color={color.ink} />
+            ? <ActivityIndicator color="#1F1F1F" />
             : <>
                 <Image source={GOOGLE_MARK} style={{ width: 18, height: 18 }} />
                 <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: "600", color: "#1F1F1F" }}>
@@ -211,7 +213,9 @@ export default function SignInScreen() {
         {process.env.EXPO_OS === "ios" && (
           <AppleAuthentication.AppleAuthenticationButton
             buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            buttonStyle={scheme === "dark"
+              ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+              : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
             cornerRadius={12}
             style={{ height: 50, opacity: busy !== null ? 0.55 : 1 }}
             onPress={withApple}

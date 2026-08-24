@@ -7,10 +7,18 @@ import { AppHeader } from "@/components/app-header";
 import { Rule, Label, SectionCard, StatStrip } from "@/components/primitives";
 import { SettingsNavRow, SettingsToggleRow } from "@/components/settings-row";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
+import { useTheme } from "@/hooks/use-theme";
 import { formatReminderTime } from "@/lib/reminders";
-import { color, space, GUTTER, type, DISPLAY_FONT } from "@/theme/tokens";
+import { space, GUTTER, radius, CONTINUOUS, DISPLAY_FONT } from "@/theme/tokens";
+
+const APPEARANCE_OPTIONS = [
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+] as const;
 
 export default function SettingsScreen() {
+  const { color, type } = useTheme();
   const {
     space: current, isShared, baseCurrency, displayCurrency,
   } = useSpace();
@@ -116,6 +124,40 @@ export default function SettingsScreen() {
         />
       </SectionCard>
 
+      <Label>Appearance</Label>
+      <SectionCard style={{ padding: space.xs }}>
+        <View style={{ flexDirection: "row", gap: space.xs }}>
+          {APPEARANCE_OPTIONS.map((option) => {
+            const selected = prefs.appearance === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                accessibilityRole="radio"
+                accessibilityLabel={`${option.label} appearance`}
+                accessibilityState={{ checked: selected }}
+                onPress={() => prefs.setAppearance(option.value)}
+                style={{
+                  flex: 1,
+                  minHeight: 42,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: radius.chip,
+                  backgroundColor: selected ? color.accent : color.surface,
+                  ...CONTINUOUS,
+                }}
+              >
+                <Text style={{ ...type.rowTitle, fontWeight: "700", color: selected ? color.onAccent : color.body }}>
+                  {option.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </SectionCard>
+      <Text style={{ ...type.rowSub, paddingHorizontal: GUTTER, paddingTop: space.sm }}>
+        System follows this device. Your choice stays on this phone.
+      </Text>
+
       {/* ── Planning ── */}
       <Label>Planning</Label>
       <SectionCard>
@@ -134,6 +176,7 @@ export default function SettingsScreen() {
 }
 
 function AccountSection() {
+  const { color, type } = useTheme();
   const { signOut, deleteAccount } = useAuth();
 
   const confirmDelete = () => {
@@ -172,8 +215,11 @@ function AccountSection() {
   );
 }
 
-const Val = ({ children }: { children: React.ReactNode }) => (
-  <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 14, color: color.ink }} numberOfLines={1}>
-    {children}
-  </Text>
-);
+function Val({ children }: { children: React.ReactNode }) {
+  const { color } = useTheme();
+  return (
+    <Text style={{ fontFamily: DISPLAY_FONT, fontSize: 14, color: color.ink }} numberOfLines={1}>
+      {children}
+    </Text>
+  );
+}

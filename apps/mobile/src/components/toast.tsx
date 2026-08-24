@@ -2,7 +2,6 @@ import {
   AccessibilityInfo,
   Text,
   View,
-  type ViewStyle,
 } from "react-native";
 import {
   createContext,
@@ -24,7 +23,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useReducedMotion } from "@/lib/motion";
-import { color, CONTINUOUS, radius, space, type } from "@/theme/tokens";
+import { CONTINUOUS, radius, space } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 type ToastTone = "info" | "success" | "error";
 type ToastOptions = { tone?: ToastTone; duration?: number };
@@ -88,6 +88,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 function ToastStack({ toasts }: { toasts: ToastItem[] }) {
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
+  const { color, type, scheme } = useTheme();
 
   return (
     <View
@@ -109,17 +110,35 @@ function ToastStack({ toasts }: { toasts: ToastItem[] }) {
           layout={reduced ? undefined : TOAST_LAYOUT}
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
-          style={toastStyle}
+          style={{
+            ...CONTINUOUS,
+            minHeight: 48,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: space.md,
+            paddingHorizontal: space.base,
+            paddingVertical: space.md,
+            borderRadius: radius.card,
+            backgroundColor: scheme === "light" ? color.ink : color.surface,
+            borderWidth: 1,
+            borderColor: color.border,
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.28)",
+          }}
         >
           <View
             style={{
               width: 7,
               height: 7,
               borderRadius: 4,
-              backgroundColor: toneColor(toast.tone),
+              backgroundColor: toast.tone === "error"
+                ? color.danger
+                : toast.tone === "success" ? color.positive : color.fainter,
             }}
           />
-          <Text style={{ ...type.body, flex: 1, fontWeight: "600", color: color.onAccent }}>
+          <Text style={{
+            ...type.body, flex: 1, fontWeight: "600",
+            color: scheme === "light" ? color.onAccent : color.ink,
+          }}>
             {toast.message}
           </Text>
         </Animated.View>
@@ -127,22 +146,3 @@ function ToastStack({ toasts }: { toasts: ToastItem[] }) {
     </View>
   );
 }
-
-function toneColor(tone: ToastTone): string {
-  if (tone === "error") return color.danger;
-  if (tone === "success") return color.positive;
-  return color.fainter;
-}
-
-const toastStyle: ViewStyle = {
-  ...CONTINUOUS,
-  minHeight: 48,
-  flexDirection: "row",
-  alignItems: "center",
-  gap: space.md,
-  paddingHorizontal: space.base,
-  paddingVertical: space.md,
-  borderRadius: radius.card,
-  backgroundColor: color.ink,
-  boxShadow: "0 8px 24px rgba(17, 17, 20, 0.18)",
-};

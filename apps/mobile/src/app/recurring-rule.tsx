@@ -17,7 +17,8 @@ import { Keypad } from "@/components/keypad";
 import { CategoryPicker } from "@/components/category-picker";
 import { Amt } from "@/components/amt";
 import { useToast } from "@/components/toast";
-import { color, space, radius, type, CONTINUOUS } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
+import { space, radius, CONTINUOUS } from "@/theme/tokens";
 
 const FREQS: { key: Freq; label: string }[] = [
   { key: "monthly", label: "Monthly" },
@@ -27,6 +28,7 @@ const FREQS: { key: Freq; label: string }[] = [
 ];
 
 export default function RecurringRuleSheet() {
+  const { color, type } = useTheme();
   const { spaceId, displayCurrency } = useSpace();
   const { show } = useToast();
   const [kind, setKind] = useState<CategoryKind>("expense");
@@ -199,6 +201,8 @@ function Segmented({
   value: string;
   onChange: (k: string) => void;
 }) {
+  const { color, type } = useTheme();
+
   return (
     <View
       style={{
@@ -226,6 +230,8 @@ function Segmented({
 
 /** A calendar-shaped day picker beats a wheel for "salary on the 25th". */
 function DayGrid({ value, onChange }: { value: number; onChange: (d: number) => void }) {
+  const { color, type } = useTheme();
+
   return (
     <View style={{ paddingHorizontal: space.lg, gap: space.xs }}>
       <Text style={{ ...type.eyebrow, color: color.faint }}>Day of month</Text>
@@ -239,10 +245,10 @@ function DayGrid({ value, onChange }: { value: number; onChange: (d: number) => 
               style={{
                 width: 40, height: 34, borderRadius: radius.chip, ...CONTINUOUS,
                 alignItems: "center", justifyContent: "center",
-                backgroundColor: active ? color.ink : color.canvas,
+                backgroundColor: active ? color.surfaceStrong : color.canvas,
               }}
             >
-              <Text style={{ ...type.rowTitle, color: active ? color.onAccent : color.ink }}>{d}</Text>
+              <Text style={{ ...type.rowTitle, color: active ? color.onStrong : color.ink }}>{d}</Text>
             </Pressable>
           );
         })}

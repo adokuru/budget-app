@@ -4,7 +4,8 @@ import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Brand } from "@/components/logo";
-import { color, space, GUTTER, radius, shadow, type } from "@/theme/tokens";
+import { space, GUTTER, radius } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 /**
  * The wordmark, a space chip, and a bell. Sits above the native large-title
@@ -17,6 +18,7 @@ export function AppHeader({
   spaceName: string;
   isShared: boolean;
 }) {
+  const { color, shadow, type } = useTheme();
   return (
     <View
       style={{

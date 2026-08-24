@@ -5,15 +5,17 @@ import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import {
-  applyKey, toMinor, convertMinor, rate, CURRENCIES, CURRENCY_CODES,
+  applyKey, toMinor, convertMinor, rate, CURRENCY_CODES,
   type AmountKey, type Currency,
 } from "@budget/shared";
 import { Keypad } from "@/components/keypad";
 import { Amt } from "@/components/amt";
+import { useTheme } from "@/hooks/use-theme";
 import { useSpace } from "@/state/space";
-import { color, space, radius, type, CONTINUOUS } from "@/theme/tokens";
+import { space, radius, CONTINUOUS } from "@/theme/tokens";
 
 export default function ConverterSheet() {
+  const { color, type } = useTheme();
   const { baseCurrency, rates } = useSpace();
   const [from, setFrom] = useState<Currency>(baseCurrency);
   const [to, setTo] = useState<Currency>(baseCurrency === "NGN" ? "USD" : "NGN");
@@ -65,10 +67,10 @@ export default function ConverterSheet() {
             hitSlop={12}
             style={{
               width: 36, height: 36, borderRadius: 18,
-              backgroundColor: color.ink, alignItems: "center", justifyContent: "center",
+              backgroundColor: color.surfaceStrong, alignItems: "center", justifyContent: "center",
             }}
           >
-            <Image source="sf:arrow.up.arrow.down" tintColor={color.onAccent} style={{ width: 16, height: 16 }} />
+            <Image source="sf:arrow.up.arrow.down" tintColor={color.onStrong} style={{ width: 16, height: 16 }} />
           </Pressable>
         </View>
         <Side currency={to} onPick={setTo} minor={toMinorValue} />
@@ -92,6 +94,7 @@ function Side({
   minor: number;
   active?: boolean;
 }) {
+  const { color, type } = useTheme();
   const next = () => {
     const i = CURRENCY_CODES.indexOf(currency);
     Haptics.selectionAsync();
@@ -102,7 +105,7 @@ function Side({
     <View
       style={{
         flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-        backgroundColor: active ? color.ink : color.surface,
+        backgroundColor: active ? color.surfaceStrong : color.surface,
         borderWidth: active ? 0 : 1, borderColor: color.hairline,
         borderRadius: radius.card, ...CONTINUOUS, padding: space.lg,
       }}
@@ -116,12 +119,12 @@ function Side({
           backgroundColor: active ? "#FFFFFF1A" : color.hairline,
         }}
       >
-        <Text style={{ ...type.rowTitle, fontWeight: "600", color: active ? color.onAccent : color.ink }}>
+        <Text style={{ ...type.rowTitle, fontWeight: "600", color: active ? color.onStrong : color.ink }}>
           {currency}
         </Text>
         <Image
           source="sf:chevron.up.chevron.down"
-          tintColor={active ? color.onAccent : color.faint}
+          tintColor={active ? color.onStrong : color.faint}
           style={{ width: 10, height: 10 }}
         />
       </Pressable>
@@ -130,7 +133,7 @@ function Side({
         minor={minor}
         currency={currency}
         size="lg"
-        tone={active ? color.onAccent : color.ink}
+        tone={active ? color.onStrong : color.ink}
       />
     </View>
   );

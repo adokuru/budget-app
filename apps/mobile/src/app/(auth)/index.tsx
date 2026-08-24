@@ -6,13 +6,15 @@ import * as SecureStore from "expo-secure-store";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Brand } from "@/components/logo";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
+import { useTheme } from "@/hooks/use-theme";
 import {
-  color, space, GUTTER, radius, shadow, type, CONTINUOUS, DISPLAY_FONT,
+  space, GUTTER, radius, CONTINUOUS, DISPLAY_FONT,
 } from "@/theme/tokens";
 
 const WELCOME_SEEN_KEY = "kobo.welcome.seen";
 
 export default function WelcomeScreen() {
+  const { color, shadow, type } = useTheme();
   const { show } = useLocalSearchParams<{ show?: string }>();
   const [ready, setReady] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -89,7 +91,7 @@ export default function WelcomeScreen() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <Text style={{ ...type.eyebrow, color: "#FFFFFF99" }}>Example month</Text>
               <View style={{ backgroundColor: color.brandLime, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 10, fontWeight: "800", color: color.surfaceStrong }}>ON TRACK</Text>
+                <Text style={{ fontSize: 10, fontWeight: "800", color: color.onBrand }}>ON TRACK</Text>
               </View>
             </View>
 
@@ -97,7 +99,7 @@ export default function WelcomeScreen() {
             <Text
               adjustsFontSizeToFit
               numberOfLines={1}
-              style={{ fontFamily: DISPLAY_FONT, fontSize: 38, letterSpacing: -1.4, color: color.onAccent, marginTop: 2 }}
+              style={{ fontFamily: DISPLAY_FONT, fontSize: 38, letterSpacing: -1.4, color: color.onStrong, marginTop: 2 }}
             >
               ₦184,500
             </Text>
@@ -143,10 +145,12 @@ export default function WelcomeScreen() {
 }
 
 function ReceiptRow({ label, value }: { label: string; value: string }) {
+  const { color, type } = useTheme();
+
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 }}>
       <Text style={{ ...type.body, color: "#FFFFFFA6" }}>{label}</Text>
-      <Text style={{ ...type.body, fontWeight: "700", color: color.onAccent }}>{value}</Text>
+      <Text style={{ ...type.body, fontWeight: "700", color: color.onStrong }}>{value}</Text>
     </View>
   );
 }

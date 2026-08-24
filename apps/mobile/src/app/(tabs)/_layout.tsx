@@ -1,5 +1,5 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
-import { color } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 /**
  * Native tabs, tinted to the design's cobalt. Kept native so the bar gets the
@@ -7,6 +7,7 @@ import { color } from "@/theme/tokens";
  * than a hand-rolled imitation.
  */
 export default function TabsLayout() {
+  const { color } = useTheme();
   return (
     <NativeTabs
       tintColor={color.accent}

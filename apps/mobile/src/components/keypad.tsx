@@ -2,7 +2,8 @@ import { Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import type { AmountKey } from "@budget/shared";
-import { color, space, radius, CONTINUOUS, DISPLAY_FONT } from "@/theme/tokens";
+import { radius, CONTINUOUS, DISPLAY_FONT } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 const KEYS: AmountKey[] = ["1","2","3","4","5","6","7","8","9",".","0","del"];
 
@@ -11,6 +12,7 @@ const KEYS: AmountKey[] = ["1","2","3","4","5","6","7","8","9",".","0","del"];
  * it appears, and the currency stays visible next to the figure.
  */
 export function Keypad({ onKey }: { onKey: (k: AmountKey) => void }) {
+  const { color } = useTheme();
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
       {KEYS.map((k) => (

@@ -10,9 +10,11 @@ import { usePrefs } from "@/state/prefs";
 import { setOverride } from "@/lib/rates";
 import { Label, Rule, SectionCard } from "@/components/primitives";
 import { SettingsNavRow, SettingsToggleRow } from "@/components/settings-row";
-import { color, space, GUTTER, radius, type, CONTINUOUS } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
+import { space, GUTTER, radius, CONTINUOUS } from "@/theme/tokens";
 
 export default function CurrencyScreen() {
+  const { color, type } = useTheme();
   const {
     baseCurrency, displayCurrency, setDisplayCurrency, rates, refreshRates,
   } = useSpace();
@@ -48,13 +50,13 @@ export default function CurrencyScreen() {
                 flexDirection: "row", alignItems: "center", gap: 4,
                 paddingHorizontal: space.md, paddingVertical: 7,
                 borderRadius: radius.pill,
-                backgroundColor: active ? color.ink : color.chip,
+                backgroundColor: active ? color.surfaceStrong : color.chip,
               }}
             >
-              <Text style={{ fontSize: 12, fontWeight: "700", color: active ? color.onAccent : color.ink }}>
+              <Text style={{ fontSize: 12, fontWeight: "700", color: active ? color.onStrong : color.ink }}>
                 {CURRENCIES[currency].symbol}
               </Text>
-              <Text style={{ fontSize: 12, color: active ? color.onAccent : color.faint }}>
+              <Text style={{ fontSize: 12, color: active ? color.onStrong : color.faint }}>
                 {currency}
               </Text>
             </Pressable>
@@ -113,6 +115,7 @@ export default function CurrencyScreen() {
 }
 
 function RateRow({ from, to, onSaved }: { from: Currency; to: Currency; onSaved: () => void }) {
+  const { color, type } = useTheme();
   const { rates } = useSpace();
   const existing = rates.overrides?.[`${from}/${to}`];
 

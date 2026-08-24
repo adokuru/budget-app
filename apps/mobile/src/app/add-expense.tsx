@@ -6,7 +6,7 @@ import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
 import {
-  applyKey, toMinor, snapshotRate, formatWhole, FALLBACK_EMOJI,
+  applyKey, toMinor, snapshotRate, FALLBACK_EMOJI,
   type AmountKey, type CategoryKind,
 } from "@budget/shared";
 import { database } from "@/db";
@@ -17,13 +17,15 @@ import { useSpace } from "@/state/space";
 import { syncQuietly } from "@/lib/sync";
 import { Keypad } from "@/components/keypad";
 import { Amt } from "@/components/amt";
-import { Rule, EmojiPlain } from "@/components/primitives";
+import { EmojiPlain } from "@/components/primitives";
 import { useToast } from "@/components/toast";
+import { useTheme } from "@/hooks/use-theme";
 import {
-  color, space, GUTTER, radius, type, CONTINUOUS, DISPLAY_FONT, CATEGORY_COLORS,
+  space, GUTTER, radius, CONTINUOUS, DISPLAY_FONT, CATEGORY_COLORS,
 } from "@/theme/tokens";
 
 export default function AddEntrySheet() {
+  const { color, type } = useTheme();
   const { spaceId, baseCurrency, displayCurrency, rates } = useSpace();
   const { show } = useToast();
   const [kind, setKind] = useState<CategoryKind>("expense");
@@ -112,7 +114,7 @@ export default function AddEntrySheet() {
                 <EmojiPlain glyph={c.emoji || FALLBACK_EMOJI} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ ...type.rowTitleLg, color: color.ink }}>{c.name}</Text>
-                  <Text style={{ ...type.rowSub, color: CATEGORY_COLORS[c.colorKey] }}>
+                  <Text style={{ ...type.rowSub, color: color.faint }}>
                     {c.kind === "income" ? "Income" : "Expense"}
                   </Text>
                 </View>
@@ -167,13 +169,13 @@ export default function AddEntrySheet() {
                 style={{
                   flex: 1, paddingVertical: 8, alignItems: "center",
                   borderRadius: 8, ...CONTINUOUS,
-                  backgroundColor: active ? (t === "expense" ? color.ink : color.positive) : "transparent",
+                  backgroundColor: active ? (t === "expense" ? color.surfaceStrong : color.positive) : "transparent",
                 }}
               >
                 <Text
                   style={{
                     fontSize: 13, fontWeight: "700",
-                    color: active ? color.onAccent : color.faint,
+                    color: active ? (t === "income" ? color.onPositive : color.onStrong) : color.faint,
                   }}
                 >
                   {t === "expense" ? "Expense" : "Income"}
@@ -246,13 +248,13 @@ export default function AddEntrySheet() {
           style={{
             paddingVertical: 15, borderRadius: radius.card, ...CONTINUOUS,
             alignItems: "center",
-            backgroundColor: !canSave ? color.hairline : isExpense ? color.ink : color.accent,
+            backgroundColor: !canSave ? color.hairline : isExpense ? color.surfaceStrong : color.accent,
           }}
         >
           <Text
             style={{
               fontFamily: DISPLAY_FONT, fontSize: 15,
-              color: canSave ? color.onAccent : color.faint,
+              color: canSave ? (isExpense ? color.onStrong : color.onAccent) : color.faint,
             }}
           >
             Save {isExpense ? "expense" : "income"}

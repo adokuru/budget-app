@@ -3,7 +3,8 @@ import { Image } from "expo-image";
 import { Link } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
-import { color, space, GUTTER, type } from "@/theme/tokens";
+import { space, GUTTER } from "@/theme/tokens";
+import { useTheme } from "@/hooks/use-theme";
 
 export function SettingsNavRow({
   label, sub, href,
@@ -12,6 +13,7 @@ export function SettingsNavRow({
   sub?: string;
   href: string;
 }) {
+  const { color, type } = useTheme();
   return (
     <Link href={href as never} asChild>
       <Pressable
@@ -38,6 +40,7 @@ export function SettingsToggleRow({
   value: boolean;
   onChange: (value: boolean) => void;
 }) {
+  const { color, type } = useTheme();
   return (
     <View
       style={{
@@ -53,6 +56,7 @@ export function SettingsToggleRow({
         value={value}
         onValueChange={(next) => { Haptics.selectionAsync(); onChange(next); }}
         trackColor={{ true: color.accent, false: color.border }}
+        ios_backgroundColor={color.border}
       />
     </View>
   );
