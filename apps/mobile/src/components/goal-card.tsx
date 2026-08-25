@@ -40,7 +40,7 @@ export function GoalCard({ summary, compact = false }: { summary: GoalSummary; c
           >
             {goal.name}
           </Text>
-          <Text style={{ ...type.eyebrow, color: state === "overdue" ? color.danger : color.onBrand }}>
+          <Text style={{ ...type.eyebrow, color: color.onBrand }}>
             {state}
           </Text>
         </View>

@@ -1,12 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  nextOccurrence, occurrencesBetween, describeRecurrence, ordinal,
+  nextOccurrence, occurrenceOnOrAfter, occurrencesBetween, describeRecurrence, ordinal, calendarDay,
   type Recurrence,
 } from "../src/recurrence.ts";
 
 const d = (s: string) => Date.parse(`${s}T00:00:00.000Z`);
 const iso = (ms: number | null) => (ms === null ? null : new Date(ms).toISOString().slice(0, 10));
+
+test("today follows the device calendar around local midnight", () => {
+  const justAfterMidnight = new Date(2026, 7, 25, 0, 10).getTime();
+  assert.equal(iso(calendarDay(justAfterMidnight)), "2026-08-25");
+});
 
 test("monthly fires on the requested day", () => {
   const salary: Recurrence = { freq: "monthly", dayOfMonth: 25, startOn: d("2026-01-25") };
@@ -43,12 +48,12 @@ test("weekly lands on the requested weekday", () => {
   assert.equal(iso(nextOccurrence(r, d("2026-08-24"))), "2026-08-31");
 });
 
-test("moving the cursor to today makes edits and resumes future-only", () => {
+test("new and resumed rules can still occur today", () => {
   const monthly: Recurrence = { freq: "monthly", dayOfMonth: 24, startOn: d("2026-08-24") };
-  assert.equal(iso(nextOccurrence(monthly, d("2026-08-24"))), "2026-09-24");
+  assert.equal(iso(occurrenceOnOrAfter(monthly, d("2026-08-24"))), "2026-08-24");
 
   const weekly: Recurrence = { freq: "weekly", weekday: 1, startOn: d("2026-08-24") };
-  assert.equal(iso(nextOccurrence(weekly, d("2026-08-24"))), "2026-08-31");
+  assert.equal(iso(occurrenceOnOrAfter(weekly, d("2026-08-24"))), "2026-08-24");
 });
 
 test("biweekly steps 14 days, not 7", () => {

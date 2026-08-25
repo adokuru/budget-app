@@ -112,39 +112,38 @@ export default function RemindersScreen() {
                 </Pressable>
               )}
             </View>
+            {prefs.recurringReminderEnabled && (
+              <>
+                <Rule full />
+                <View style={{ ...rowStyle, flexDirection: "column", alignItems: "stretch" }}>
+                  <View>
+                    <Text style={{ ...type.rowTitleLg, color: color.ink }}>Reminder date</Text>
+                    <Text style={type.rowSub}>Choose how early to be reminded.</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
+                    {[0, 1, 3].map((days) => {
+                      const selected = prefs.recurringReminderDaysBefore === days;
+                      return (
+                        <Pressable
+                          key={days}
+                          onPress={() => prefs.setRecurringReminderDaysBefore(days)}
+                          style={{
+                            ...chipStyle,
+                            backgroundColor: selected ? color.surfaceStrong : color.chip,
+                          }}
+                        >
+                          <Text style={{ fontSize: 12, fontWeight: "700", color: selected ? color.onStrong : color.body }}>
+                            {days === 0 ? "Today" : `${days} ${days === 1 ? "day" : "days"}`}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              </>
+            )}
           </SectionCard>
           {showAndroidPicker && timePicker}
-        </>
-      )}
-
-      {prefs.recurringReminderEnabled && (
-        <>
-          <Rule />
-          <View style={{ ...rowStyle, alignItems: "flex-start" }}>
-            <View style={{ flex: 1, paddingTop: 8 }}>
-              <Text style={{ ...type.rowTitleLg, color: color.ink }}>Reminder date</Text>
-              <Text style={type.rowSub}>Choose how early to be reminded.</Text>
-            </View>
-            <View style={{ flexDirection: "row", gap: space.sm }}>
-              {[0, 1, 3].map((days) => {
-                const selected = prefs.recurringReminderDaysBefore === days;
-                return (
-                  <Pressable
-                    key={days}
-                    onPress={() => prefs.setRecurringReminderDaysBefore(days)}
-                    style={{
-                      ...chipStyle,
-                      backgroundColor: selected ? color.surfaceStrong : color.chip,
-                    }}
-                  >
-                    <Text style={{ fontSize: 12, fontWeight: "700", color: selected ? color.onStrong : color.body }}>
-                      {days === 0 ? "Today" : `${days} ${days === 1 ? "day" : "days"}`}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
         </>
       )}
 
@@ -180,6 +179,8 @@ const rowStyle = {
 
 const chipStyle = {
   ...CONTINUOUS,
+  minHeight: 44,
+  justifyContent: "center",
   borderRadius: radius.chip,
   paddingHorizontal: space.md,
   paddingVertical: 9,

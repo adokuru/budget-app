@@ -23,6 +23,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useReducedMotion } from "@/lib/motion";
+import { FAB_CONTENT_PADDING_BOTTOM } from "@/components/fab";
 import { CONTINUOUS, radius, space } from "@/theme/tokens";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -97,7 +98,7 @@ function ToastStack({ toasts }: { toasts: ToastItem[] }) {
         position: "absolute",
         left: space.base,
         right: space.base,
-        bottom: insets.bottom + 76,
+        bottom: Math.max(insets.bottom + 76, FAB_CONTENT_PADDING_BOTTOM),
         zIndex: 100,
         gap: space.sm,
       }}

@@ -44,11 +44,12 @@ export default function CurrencyScreen() {
             <Pressable
               key={currency}
               accessibilityRole="button"
+              accessibilityLabel={`Use ${CURRENCIES[currency].name} (${currency}) as display currency`}
               accessibilityState={{ selected: active }}
               onPress={() => { Haptics.selectionAsync(); setDisplayCurrency(currency); }}
               style={{
                 flexDirection: "row", alignItems: "center", gap: 4,
-                paddingHorizontal: space.md, paddingVertical: 7,
+                minHeight: 48, paddingHorizontal: space.md,
                 borderRadius: radius.pill,
                 backgroundColor: active ? color.surfaceStrong : color.chip,
               }}
@@ -151,6 +152,7 @@ function RateRow({ from, to, onSaved }: { from: Currency; to: Currency; onSaved:
         </Text>
       </View>
       <TextInput
+        accessibilityLabel={`Manual ${from} to ${to} exchange rate`}
         value={draft}
         onChangeText={setDraft}
         onBlur={commit}
@@ -160,8 +162,8 @@ function RateRow({ from, to, onSaved }: { from: Currency; to: Currency; onSaved:
         placeholder={auto ? auto.toFixed(2) : "—"}
         placeholderTextColor={color.fainter}
         style={{
-          fontSize: 14, color: color.ink, textAlign: "right", minWidth: 88,
-          paddingVertical: 7, paddingHorizontal: space.md,
+          fontSize: 14, color: color.ink, textAlign: "right", minWidth: 88, minHeight: 48,
+          paddingHorizontal: space.md,
           backgroundColor: color.chip, borderRadius: radius.chip, ...CONTINUOUS,
         }}
       />

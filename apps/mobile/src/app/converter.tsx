@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -45,28 +45,38 @@ export default function ConverterSheet() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.canvas }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: color.canvas }}
+      contentContainerStyle={{ paddingBottom: space.xxl }}
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       <View
         style={{
           flexDirection: "row", alignItems: "center", justifyContent: "space-between",
           paddingHorizontal: space.lg, paddingTop: space.lg, paddingBottom: space.sm,
         }}
       >
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable
+          accessibilityLabel="Close converter"
+          onPress={() => router.back()}
+          style={{ minWidth: 64, minHeight: 48, justifyContent: "center", alignItems: "flex-start" }}
+        >
           <Text style={{ ...type.body, color: color.faint }}>Close</Text>
         </Pressable>
         <Text style={{ ...type.body, fontWeight: "600", color: color.ink }}>Convert</Text>
-        <View style={{ width: 44 }} />
+        <View style={{ width: 64 }} />
       </View>
 
       <View style={{ paddingHorizontal: space.lg, gap: space.sm }}>
         <Side currency={from} onPick={setFrom} minor={fromMinor} active />
         <View style={{ alignItems: "center", marginVertical: -space.xs, zIndex: 1 }}>
           <Pressable
+            accessibilityLabel="Swap currencies"
             onPress={swap}
-            hitSlop={12}
             style={{
-              width: 36, height: 36, borderRadius: 18,
+              width: 48, height: 48, borderRadius: 24,
               backgroundColor: color.surfaceStrong, alignItems: "center", justifyContent: "center",
             }}
           >
@@ -82,7 +92,7 @@ export default function ConverterSheet() {
       <View style={{ paddingHorizontal: space.lg, paddingTop: space.base, paddingBottom: space.lg }}>
         <Keypad onKey={(k: AmountKey) => setRaw((r) => applyKey(r, k))} />
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -111,10 +121,12 @@ function Side({
       }}
     >
       <Pressable
+        accessibilityLabel={`${active ? "From" : "To"} currency, ${currency}`}
+        accessibilityHint="Selects the next currency"
         onPress={next}
         style={{
           flexDirection: "row", alignItems: "center", gap: space.xs,
-          paddingVertical: 6, paddingHorizontal: space.md,
+          minHeight: 48, paddingHorizontal: space.md,
           borderRadius: radius.pill,
           backgroundColor: active ? "#FFFFFF1A" : color.hairline,
         }}

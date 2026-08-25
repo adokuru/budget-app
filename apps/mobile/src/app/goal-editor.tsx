@@ -92,13 +92,36 @@ export default function GoalEditorSheet() {
     <ScrollView
       style={{ flex: 1, backgroundColor: color.canvas }}
       contentContainerStyle={{ paddingBottom: space.xxl, gap: space.base }}
-      stickyHeaderIndices={[0]}
+      contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      showsVerticalScrollIndicator={false}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: GUTTER, backgroundColor: color.canvas }}>
-        <Pressable onPress={() => router.back()} hitSlop={12}><Text style={{ ...type.body, color: color.faint }}>Cancel</Text></Pressable>
-        <Text style={{ ...type.body, fontWeight: "700", color: color.ink }}>{goal ? "Edit goal" : "New goal"}</Text>
-        <Pressable accessibilityLabel="Save goal" onPress={save} disabled={!canSave} hitSlop={12}>
+      <View
+        style={{
+          minHeight: 56, flexDirection: "row", alignItems: "center",
+          paddingHorizontal: GUTTER, backgroundColor: color.canvas,
+        }}
+      >
+        <Pressable
+          accessibilityLabel="Cancel goal"
+          onPress={() => router.back()}
+          style={{ minWidth: 72, minHeight: 48, justifyContent: "center", alignItems: "flex-start" }}
+        >
+          <Text style={{ ...type.body, color: color.faint }}>Cancel</Text>
+        </Pressable>
+        <Text
+          numberOfLines={1}
+          style={{ ...type.body, flex: 1, fontWeight: "700", color: color.ink, textAlign: "center" }}
+        >
+          {goal ? "Edit goal" : "New goal"}
+        </Text>
+        <Pressable
+          accessibilityLabel="Save goal"
+          onPress={save}
+          disabled={!canSave}
+          style={{ minWidth: 72, minHeight: 48, justifyContent: "center", alignItems: "flex-end" }}
+        >
           <Text style={{ ...type.body, fontWeight: "700", color: canSave ? color.accent : color.fainter }}>{saving ? "Saving" : "Save"}</Text>
         </Pressable>
       </View>

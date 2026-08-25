@@ -103,6 +103,11 @@ export function percentOf(spent: number, limit: number): number | null {
   return Math.max(0, Math.round((spent / limit) * 100));
 }
 
+/** Available cash is money actually received minus money already spent. */
+export function availableThisMonth(income: number, spent: number): number {
+  return income - spent;
+}
+
 /**
  * Whole-unit money for prose lines ("of ₦450,000"), where a composed
  * raised-decimal component cannot flow inline with text.

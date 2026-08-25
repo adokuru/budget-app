@@ -24,6 +24,14 @@ export const utcDay = (ms: number): number => {
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 };
 
+/** The device's calendar date encoded as UTC midnight for date-only storage. */
+export const calendarDay = (ms: number): number => {
+  const d = new Date(ms);
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+};
+
+const DAY_MS = 86_400_000;
+
 const daysInMonth = (year: number, monthIndex: number): number =>
   new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
 
@@ -88,6 +96,11 @@ export function nextOccurrence(rule: Recurrence, after: number): number | null {
   if (next === null) return null;
   if (rule.endOn != null && next > utcDay(rule.endOn)) return null;
   return next;
+}
+
+/** The first occurrence on or after a calendar day. */
+export function occurrenceOnOrAfter(rule: Recurrence, onOrAfter: number): number | null {
+  return nextOccurrence(rule, utcDay(onOrAfter) - DAY_MS);
 }
 
 /**

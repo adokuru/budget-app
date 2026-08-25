@@ -131,7 +131,7 @@ export default function SettingsScreen() {
                 onPress={() => prefs.setAppearance(option.value)}
                 style={{
                   flex: 1,
-                  minHeight: 42,
+                  minHeight: 44,
                   alignItems: "center",
                   justifyContent: "center",
                   borderRadius: radius.chip,

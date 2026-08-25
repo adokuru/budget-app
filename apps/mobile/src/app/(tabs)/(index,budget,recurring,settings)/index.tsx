@@ -4,7 +4,7 @@ import { Q } from "@nozbe/watermelondb";
 import { router, useSegments } from "expo-router";
 import * as Haptics from "expo-haptics";
 import {
-  sumMinor, convertMinor, percentOf, formatWhole, FALLBACK_EMOJI,
+  sumMinor, convertMinor, percentOf, formatWhole, availableThisMonth, calendarDay, FALLBACK_EMOJI,
   type Currency,
 } from "@budget/shared";
 import { database } from "@/db";
@@ -88,9 +88,10 @@ function HomeScreen() {
   const spent = sumMinor(monthTxns.filter((t) => t.kind === "expense").map((t) => t.baseMinor));
   const budgeted = sumMinor(budgets.map((b) => b.amountMinor));
 
-  const ceiling = budgeted > 0 ? budgeted : income;
-  const left = ceiling - spent;
-  const pct = percentOf(spent, ceiling);
+  const spendingLimit = budgeted > 0 ? budgeted : income;
+  const left = availableThisMonth(income, spent);
+  const pct = percentOf(spent, spendingLimit);
+  const overPlan = spendingLimit > 0 && spent > spendingLimit;
 
   const projection = useMemo(
     () => projectedRemaining(rules, Date.now(), monthEnd().getTime()),
@@ -124,7 +125,10 @@ function HomeScreen() {
     .sort((a, b) => a.nextRunAt.getTime() - b.nextRunAt.getTime())
     .slice(0, 4);
 
-  const pendingIncome = rules.filter((r) => r.kind === "income" && !r.autoPost);
+  const today = calendarDay(Date.now());
+  const pendingIncome = rules.filter(
+    (r) => r.kind === "income" && !r.autoPost && r.nextRunAt.getTime() <= today
+  );
   const topSpending = spending.slice(0, 4);
 
   if (loading) {
@@ -153,32 +157,33 @@ function HomeScreen() {
       >
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ ...type.eyebrow, color: color.onBrand }}>
-            {budgeted > 0 ? "Left to spend" : "Available this month"} · {monthLabel()}
+            Available this month · {monthLabel()}
           </Text>
-          {ceiling > 0 && (
+          {spendingLimit > 0 && (
             <View
               style={{
                 paddingHorizontal: 9, paddingVertical: 5, borderRadius: radius.pill,
-                backgroundColor: left < 0 ? color.danger : color.surfaceStrong,
+                backgroundColor: color.surfaceStrong,
               }}
             >
               <Text style={{ fontSize: 10, fontWeight: "800", color: color.onStrong }}>
-                {left < 0 ? "Over budget" : "On track"}
+                {overPlan ? "Over plan" : "On track"}
               </Text>
             </View>
           )}
         </View>
         <View style={{ marginTop: space.sm }}>
-          <Amt minor={toDisplay(left)} currency={displayCurrency} size="xl"
-               tone={left < 0 ? color.danger : color.onBrand} />
+          <Amt minor={toDisplay(left)} currency={displayCurrency} size="xl" tone={color.onBrand} />
         </View>
         <Text style={{ ...type.meta, color: color.onBrand, marginTop: space.sm }}>
-          {ceiling > 0
-            ? `of ${formatWhole(toDisplay(ceiling), displayCurrency)}${pct !== null ? ` · ${pct}% used` : ""}`
+          {income > 0
+            ? `${formatWhole(toDisplay(income), displayCurrency)} received · ${formatWhole(toDisplay(spent), displayCurrency)} spent`
+            : spendingLimit > 0
+              ? `${formatWhole(toDisplay(spendingLimit), displayCurrency)} planned${pct !== null ? ` · ${pct}% used` : ""}`
             : `${formatWhole(toDisplay(spent), displayCurrency)} spent · no budget set`}
         </Text>
         <View style={{ marginTop: space.base }}>
-          <Thin spent={spent} budget={ceiling} tone={color.ink} trackColor="#11162A2E" />
+          <Thin spent={spent} budget={spendingLimit} tone={color.ink} trackColor="#11162A2E" />
         </View>
       </View>
 
@@ -199,6 +204,7 @@ function HomeScreen() {
           <Label
             action={(
               <Pressable
+                accessibilityLabel="View all goals"
                 onPress={() => router.push({ pathname: "/(tabs)/(budget)/budget", params: { view: "goals" } })}
                 hitSlop={10}
               >
@@ -258,7 +264,7 @@ function HomeScreen() {
         <>
           <Label
             action={spending.length > topSpending.length ? (
-              <Pressable onPress={() => router.push("/(tabs)/(budget)/budget")} hitSlop={10}>
+              <Pressable accessibilityLabel="View all spending" onPress={() => router.push("/(tabs)/(budget)/budget")} hitSlop={10}>
                 <Text style={type.action}>View all</Text>
               </Pressable>
             ) : undefined}
@@ -292,7 +298,7 @@ function HomeScreen() {
         <>
           <Label
             action={(
-              <Pressable onPress={() => router.push("/transactions")} hitSlop={10}>
+              <Pressable accessibilityLabel="View all transactions" onPress={() => router.push("/transactions")} hitSlop={10}>
                 <Text style={type.action}>View all</Text>
               </Pressable>
             )}

@@ -29,7 +29,7 @@ export default function BudgetScreen() {
   const txnState = useQueryState<Transaction>(
     () =>
       database.get<Transaction>("transactions").query(
-        Q.where("space_id", spaceId), Q.where("kind", "expense"),
+        Q.where("space_id", spaceId),
         Q.where("occurred_at", Q.gte(since))
       ),
     [spaceId, since]
@@ -55,10 +55,13 @@ export default function BudgetScreen() {
 
   const spentBy = useMemo(() => {
     const m = new Map<string, number>();
-    for (const t of txns) m.set(t.categoryId, (m.get(t.categoryId) ?? 0) + t.baseMinor);
+    for (const t of txns) {
+      if (t.kind === "expense") m.set(t.categoryId, (m.get(t.categoryId) ?? 0) + t.baseMinor);
+    }
     return m;
   }, [txns]);
 
+  const totalIncome = sumMinor(txns.filter((t) => t.kind === "income").map((t) => t.baseMinor));
   const totalSpent = sumMinor([...spentBy.values()]);
   const budgeted = sumMinor(budgets.map((b) => b.amountMinor));
   const remaining = budgeted - totalSpent;
@@ -67,11 +70,14 @@ export default function BudgetScreen() {
   // Only categories that have a limit or some spend are worth a row.
   const rows = categories
     .filter((c) => c.kind === "expense")
-    .map((c) => ({
-      category: c,
-      spent: spentBy.get(c.id) ?? 0,
-      limit: budgets.find((b) => b.categoryId === c.id)?.amountMinor ?? 0,
-    }))
+    .map((c) => {
+      const budget = budgets.find((b) => b.categoryId === c.id);
+      return {
+        category: c,
+        spent: spentBy.get(c.id) ?? 0,
+        limit: budget?.amountMinor ?? 0,
+      };
+    })
     .filter((r) => r.limit > 0 || r.spent > 0);
 
   return (
@@ -93,18 +99,28 @@ export default function BudgetScreen() {
         </Text>
         <Amt minor={toDisplay(budgeted)} currency={displayCurrency} size="xl" tone={color.onAccent} />
 
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.sm }}>
+          <Text style={{ ...type.statLabel, color: color.onAccent }}>Income received</Text>
+          <AmtShort
+            minor={toDisplay(totalIncome)}
+            currency={displayCurrency}
+            size={15}
+            tone={totalIncome > 0 ? color.brandLime : color.onAccent}
+          />
+        </View>
+
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.lg, marginTop: space.base }}>
           <Figure inverse label="Spent" value={<AmtShort minor={toDisplay(totalSpent)} currency={displayCurrency} size={15} tone={color.onAccent} />} />
           <Divider inverse />
           <Figure
             inverse
-            label="Remaining"
+            label="Budget left"
             value={
               <AmtShort
                 minor={toDisplay(remaining)}
                 currency={displayCurrency}
                 size={15}
-                tone={remaining < 0 ? color.danger : color.brandLime}
+                tone={remaining < 0 ? color.onAccent : color.brandLime}
               />
             }
           />
@@ -136,8 +152,12 @@ export default function BudgetScreen() {
           <Label
             action={canEdit ? (
               <Link href="/budget-editor" asChild>
-                <Pressable hitSlop={10}>
-                  <Text style={type.action}>Edit</Text>
+                <Pressable
+                  accessibilityLabel="Edit all budgets"
+                  hitSlop={6}
+                  style={{ minHeight: 48, paddingHorizontal: space.sm, justifyContent: "center" }}
+                >
+                  <Text style={type.action}>Edit all</Text>
                 </Pressable>
               </Link>
             ) : undefined}
@@ -149,36 +169,59 @@ export default function BudgetScreen() {
             {rows.map(({ category, spent, limit }, i) => {
               const pct = percentOf(spent, limit);
               const over = limit > 0 && spent > limit;
-              return (
-                <View key={category.id}>
-                  <Row style={{ paddingVertical: space.base + 2 }}>
-                    <EmojiPlain glyph={category.emoji || FALLBACK_EMOJI} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <View
-                        style={{
-                          flexDirection: "row", alignItems: "baseline",
-                          justifyContent: "space-between", marginBottom: space.sm,
-                        }}
-                      >
-                        <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
-                          {category.name}
-                        </Text>
-                        <Text style={type.rowSub}>
-                          {formatWhole(toDisplay(spent), displayCurrency)}
-                          {limit > 0 ? ` / ${formatWhole(toDisplay(limit), displayCurrency)}` : ""}
-                        </Text>
-                      </View>
-                      <Thin spent={spent} budget={limit || spent} tone={CATEGORY_COLORS[category.colorKey]} />
+              const editable = canEdit && !category.archived;
+              const row = (
+                <Row style={{ paddingVertical: space.base + 2 }}>
+                  <EmojiPlain glyph={category.emoji || FALLBACK_EMOJI} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View
+                      style={{
+                        flexDirection: "row", alignItems: "baseline",
+                        justifyContent: "space-between", marginBottom: space.sm,
+                      }}
+                    >
+                      <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>
+                        {category.name}
+                      </Text>
+                      <Text style={type.rowSub}>
+                        {formatWhole(toDisplay(spent), displayCurrency)}
+                        {limit > 0 ? ` / ${formatWhole(toDisplay(limit), displayCurrency)}` : ""}
+                      </Text>
                     </View>
+                    <Thin spent={spent} budget={limit || spent} tone={CATEGORY_COLORS[category.colorKey]} />
+                  </View>
+                  <View style={{ width: 52, alignItems: "flex-end", gap: 2 }}>
                     <Text
                       style={{
-                        fontSize: 11, fontWeight: "700", width: 52, textAlign: "right",
+                        fontSize: 11, fontWeight: "700", textAlign: "right",
                         color: spent === 0 ? color.fainter : over ? color.danger : color.positive,
                       }}
                     >
                       {spent === 0 ? "—" : over ? "over" : pct === null ? "—" : `${pct}%`}
                     </Text>
-                  </Row>
+                    {editable && <Text style={{ ...type.action, fontSize: 11 }}>Edit</Text>}
+                  </View>
+                </Row>
+              );
+              return (
+                <View key={category.id}>
+                  {editable ? (
+                    <Pressable
+                      accessible
+                      accessibilityLabel={`Edit ${category.name} budget`}
+                      accessibilityValue={{
+                        text: limit > 0
+                          ? `${formatWhole(toDisplay(spent), displayCurrency)} spent of ${formatWhole(toDisplay(limit), displayCurrency)}${over ? ", over budget" : pct === null ? "" : `, ${pct}% used`}`
+                          : `${formatWhole(toDisplay(spent), displayCurrency)} spent, no budget set`,
+                      }}
+                      onPress={() => router.push({
+                        pathname: "/budget-editor",
+                        params: { categoryId: category.id },
+                      } as never)}
+                    >
+                      {row}
+                    </Pressable>
+                  ) : row}
                   {i < rows.length - 1 && <Rule full />}
                 </View>
               );

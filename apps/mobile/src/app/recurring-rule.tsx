@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView, Switch, Text, View } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Button, ScrollView, Switch, Text, View } from "react-native";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { Host, Picker as NativePicker } from "@expo/ui";
+import NativeSegmentedControl from "@expo/ui/community/segmented-control";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
 import {
-  applyKey, toMajor, toMinor, describeRecurrence, nextOccurrence, utcDay,
+  applyKey, toMajor, toMinor, describeRecurrence, nextOccurrence, occurrenceOnOrAfter, calendarDay, ordinal,
   type AmountKey, type CategoryKind, type Freq,
 } from "@budget/shared";
 import { database } from "@/db";
-import type { Category, RecurringRule } from "@/db/models";
+import type { Category, RecurringRule, Transaction } from "@/db/models";
 import { useQuery } from "@/db/hooks";
 import { useSpace } from "@/state/space";
+import { usePrefs } from "@/state/prefs";
 import { syncQuietly } from "@/lib/sync";
 import { Keypad } from "@/components/keypad";
 import { CategoryPicker } from "@/components/category-picker";
@@ -27,11 +30,15 @@ const FREQS: { key: Freq; label: string }[] = [
   { key: "yearly", label: "Yearly" },
 ];
 
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS = Array.from({ length: 31 }, (_, index) => ({ key: index + 1, label: ordinal(index + 1) }));
+
 export default function RecurringRuleSheet() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const ruleId = Array.isArray(id) ? id[0] : id;
-  const { color, type } = useTheme();
+  const { color, type, scheme } = useTheme();
   const { spaceId, displayCurrency, canEdit } = useSpace();
+  const { confirmIncome } = usePrefs();
   const { show } = useToast();
   const [rule, setRule] = useState<RecurringRule | null>(null);
   const [kind, setKind] = useState<CategoryKind>("expense");
@@ -41,6 +48,9 @@ export default function RecurringRuleSheet() {
   const [autoPost, setAutoPost] = useState(true);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [raw, setRaw] = useState("0");
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const saveActionRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (canEdit) return;
@@ -76,7 +86,7 @@ export default function RecurringRuleSheet() {
   const currency = rule?.currency ?? displayCurrency;
   const minor = toMinor(raw || "0", currency);
   const category = categories.find((c) => c.id === categoryId);
-  const canSave = canEdit && minor > 0 && category != null && (!ruleId || rule != null);
+  const canSave = canEdit && minor > 0 && category != null && !saving && (!ruleId || rule != null);
 
   const recurrence = useMemo(
     () => ({
@@ -84,16 +94,19 @@ export default function RecurringRuleSheet() {
       dayOfMonth: freq === "monthly" || freq === "yearly" ? dayOfMonth : null,
       weekday: freq === "weekly" || freq === "biweekly" ? weekday : null,
       interval: 1,
-      startOn: utcDay(Date.now()),
+      startOn: calendarDay(Date.now()),
     }),
     [freq, dayOfMonth, weekday]
   );
 
   async function save() {
-    if (!canSave) return;
-    const today = utcDay(Date.now());
-    const cursor = rule ? today : today - 1;
-    const next = nextOccurrence(recurrence, cursor) ?? utcDay(Date.now());
+    if (!canSave || savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    const today = calendarDay(Date.now());
+    const next = (rule?.lastRunAt
+      ? nextOccurrence(recurrence, rule.lastRunAt.getTime())
+      : occurrenceOnOrAfter(recurrence, today)) ?? today;
 
     try {
       await database.write(async () => {
@@ -111,7 +124,6 @@ export default function RecurringRuleSheet() {
             r.endOn = null;
             r.autoPost = autoPost;
             r.nextRunAt = new Date(next);
-            if (r.active) r.lastRunAt = new Date(cursor);
           });
           return;
         }
@@ -142,21 +154,33 @@ export default function RecurringRuleSheet() {
       router.back();
     } catch (error) {
       show(error instanceof Error ? error.message : "Could not save this recurring item", { tone: "error" });
+      savingRef.current = false;
+      setSaving(false);
     }
   }
 
   async function setActive(active: boolean) {
     if (!rule) return;
-    const cursor = utcDay(Date.now());
-    const next = nextOccurrence(recurrence, cursor) ?? utcDay(Date.now());
-    await database.write(() => rule.update((r) => {
-      r.active = active;
-      if (active) {
-        r.startOn = new Date(recurrence.startOn);
-        r.lastRunAt = new Date(cursor);
-        r.nextRunAt = new Date(next);
-      }
-    }));
+    const today = calendarDay(Date.now());
+    await database.write(async () => {
+      const postedToday = active && await database.get<Transaction>("transactions").query(
+        Q.where("space_id", spaceId),
+        Q.where("recurring_rule_id", rule.id),
+        Q.where("occurred_at", today)
+      ).fetchCount() > 0;
+      const cursor = postedToday ? today : today - 86_400_000;
+      const next = (postedToday
+        ? nextOccurrence(recurrence, today)
+        : occurrenceOnOrAfter(recurrence, today)) ?? today;
+      await rule.update((r) => {
+        r.active = active;
+        if (active) {
+          r.startOn = new Date(recurrence.startOn);
+          r.lastRunAt = new Date(cursor);
+          r.nextRunAt = new Date(next);
+        }
+      });
+    });
     show(active ? "Recurring item resumed" : "Recurring item paused", { tone: "success" });
     syncQuietly();
     router.back();
@@ -181,41 +205,47 @@ export default function RecurringRuleSheet() {
     );
   }
 
+  saveActionRef.current = () => { void save(); };
+  const screenOptions = useMemo(
+    () => ({
+      headerShadowVisible: false,
+      headerTitleAlign: "center" as const,
+      headerStyle: { backgroundColor: color.canvas },
+      title: rule ? "Edit recurring item" : "New recurring item",
+      headerLeft: () => (
+        <Button
+          title="Cancel"
+          accessibilityLabel="Cancel recurring item"
+          color={color.faint}
+          onPress={() => router.back()}
+        />
+      ),
+      headerRight: () => (
+        <Button
+          title="Save"
+          accessibilityLabel="Save recurring item"
+          color={color.accent}
+          disabled={!canSave}
+          onPress={() => saveActionRef.current()}
+        />
+      ),
+    }),
+    [rule, canSave, color.canvas, color.faint, color.accent]
+  );
+
   if (!canEdit || (ruleId && !rule)) return null;
 
   return (
-    /*
-      The ScrollView is the sheet's single subview, with the header sticky
-      inside it. RNScreens' FormSheet special-cases a ScrollView child and
-      lays out incorrectly when it has to share the sheet with siblings.
-    */
-    <ScrollView
-      style={{ flex: 1, backgroundColor: color.canvas }}
-      contentContainerStyle={{ paddingBottom: space.xxl, gap: space.base }}
-      stickyHeaderIndices={[0]}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View
-        style={{
-          flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-          paddingHorizontal: space.lg, paddingTop: space.lg, paddingBottom: space.md,
-          backgroundColor: color.canvas,
-        }}
+    <>
+      <Stack.Screen options={screenOptions} />
+      <ScrollView
+        style={{ flex: 1, backgroundColor: color.canvas }}
+        contentContainerStyle={{ paddingTop: space.sm, paddingBottom: space.xxl, gap: space.base }}
+        contentInsetAdjustmentBehavior="automatic"
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text style={{ ...type.body, color: color.faint }}>Cancel</Text>
-        </Pressable>
-        <Text style={{ ...type.body, fontWeight: "600", color: color.ink }}>
-          {rule ? "Edit recurring item" : "New recurring item"}
-        </Text>
-        <Pressable accessibilityLabel="Save recurring item" onPress={save} disabled={!canSave} hitSlop={12}>
-          <Text style={{ ...type.body, fontWeight: "600", color: canSave ? color.accent : color.hairline }}>
-            Save
-          </Text>
-        </Pressable>
-      </View>
-
         <View style={{ alignItems: "center", paddingTop: space.sm }}>
           <Amt
             minor={minor}
@@ -229,49 +259,83 @@ export default function RecurringRuleSheet() {
           </Text>
         </View>
 
-        <Segmented
-          options={[{ key: "expense", label: "Expense" }, { key: "income", label: "Income" }]}
-          value={kind}
-          onChange={(k) => { setKind(k as CategoryKind); setCategoryId(null); }}
-        />
-
-        <Segmented
-          options={FREQS.map((f) => ({ key: f.key, label: f.label }))}
-          value={freq}
-          onChange={(f) => setFreq(f as Freq)}
-        />
-
-        {(freq === "monthly" || freq === "yearly") && (
-          <DayGrid value={dayOfMonth} onChange={setDayOfMonth} />
-        )}
-        {(freq === "weekly" || freq === "biweekly") && (
-          <Segmented
-            options={["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d, i) => ({
-              key: String(i), label: d,
-            }))}
-            value={String(weekday)}
-            onChange={(w) => setWeekday(Number(w))}
+        <View style={{ marginHorizontal: space.lg, gap: space.sm }}>
+          <Text style={{ ...type.eyebrow, color: color.faint }}>Entry type</Text>
+          <NativeSegmentedControl
+            values={["Expense", "Income"]}
+            selectedIndex={kind === "expense" ? 0 : 1}
+            appearance={scheme}
+            testID="recurring-kind"
+            style={{ height: 48 }}
+            onChange={({ nativeEvent }) => {
+              const nextKind: CategoryKind = nativeEvent.selectedSegmentIndex === 0 ? "expense" : "income";
+              setKind(nextKind);
+              setCategoryId(null);
+              if (!rule) setAutoPost(nextKind === "income" ? !confirmIncome : true);
+            }}
           />
-        )}
+        </View>
+
+        <View
+          style={{
+            marginHorizontal: space.lg, backgroundColor: color.chip,
+            borderRadius: radius.chip, ...CONTINUOUS, overflow: "hidden",
+          }}
+        >
+          <NativePickerRow
+            label="Repeats"
+            value={freq}
+            options={FREQS}
+            onChange={setFreq}
+            testID="recurrence-frequency-picker"
+          />
+          <View style={{ height: 1, marginLeft: space.base, backgroundColor: color.hairline }} />
+          {freq === "monthly" || freq === "yearly" ? (
+            <NativePickerRow
+              label="Day of month"
+              detail={dayOfMonth > 28 ? "Short months use their last day" : undefined}
+              value={dayOfMonth}
+              options={DAYS}
+              onChange={setDayOfMonth}
+              testID="day-of-month-picker"
+            />
+          ) : (
+            <NativePickerRow
+              label="Day of week"
+              value={weekday}
+              options={WEEKDAYS.map((label, key) => ({ key, label }))}
+              onChange={setWeekday}
+              testID="weekday-picker"
+            />
+          )}
+        </View>
 
         <CategoryPicker categories={categories} selectedId={categoryId} onSelect={setCategoryId} />
 
         <View
           style={{
             marginHorizontal: space.lg, padding: space.base,
-            backgroundColor: color.canvas, borderRadius: radius.chip, ...CONTINUOUS,
+            minHeight: 64, backgroundColor: color.canvas, borderRadius: radius.chip, ...CONTINUOUS,
+            borderWidth: 1, borderColor: color.hairline,
             flexDirection: "row", alignItems: "center", gap: space.md,
           }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ ...type.body, color: color.ink }}>Add automatically</Text>
+            <Text style={{ ...type.body, color: color.ink }}>
+              {kind === "income" ? "Count automatically" : "Add automatically"}
+            </Text>
             <Text style={{ ...type.rowSub, color: color.faint }}>
-              {autoPost
-                ? "Add this item on its due date without asking."
-                : "Ask before adding this item."}
+              {kind === "income"
+                ? autoPost
+                  ? "Count it as received on the due date."
+                  : "Wait for you to mark it received."
+                : autoPost
+                  ? "Add this bill on its due date."
+                  : "Wait for you to mark it paid."}
             </Text>
           </View>
           <Switch
+            accessibilityLabel={kind === "income" ? "Count income automatically" : "Add expense automatically"}
             value={autoPost}
             onValueChange={(v) => { Haptics.selectionAsync(); setAutoPost(v); }}
             trackColor={{ true: color.accent }}
@@ -287,89 +351,55 @@ export default function RecurringRuleSheet() {
             <Pressable
               accessibilityLabel={rule.active ? "Pause recurring item" : "Resume recurring item"}
               onPress={() => void setActive(!rule.active)}
-              style={{ paddingVertical: 13, alignItems: "center" }}
+              style={{ minHeight: 48, alignItems: "center", justifyContent: "center" }}
             >
               <Text style={type.action}>{rule.active ? "Pause" : "Resume"}</Text>
             </Pressable>
             <Pressable
               accessibilityLabel="Delete recurring item"
               onPress={confirmDelete}
-              style={{ paddingVertical: 13, alignItems: "center" }}
+              style={{ minHeight: 48, alignItems: "center", justifyContent: "center" }}
             >
               <Text style={{ ...type.action, color: color.danger }}>Delete recurring item</Text>
             </Pressable>
           </View>
         )}
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 }
 
-function Segmented({
-  options, value, onChange,
+function NativePickerRow<T extends string | number>({
+  label, detail, value, options, onChange, testID,
 }: {
-  options: { key: string; label: string }[];
-  value: string;
-  onChange: (k: string) => void;
+  label: string;
+  detail?: string;
+  value: T;
+  options: { key: T; label: string }[];
+  onChange: (value: T) => void;
+  testID: string;
 }) {
-  const { color, type } = useTheme();
+  const { color, type, scheme } = useTheme();
 
   return (
-    <View
-      style={{
-        flexDirection: "row", marginHorizontal: space.lg,
-        backgroundColor: color.hairline, borderRadius: radius.pill, padding: 2,
-      }}
-    >
-      {options.map((o) => (
-        <Pressable
-          key={o.key}
-          accessibilityLabel={o.label}
-          onPress={() => { Haptics.selectionAsync(); onChange(o.key); }}
-          style={{
-            flex: 1, paddingVertical: 7, borderRadius: radius.pill, alignItems: "center",
-            backgroundColor: value === o.key ? color.canvas : "transparent",
-          }}
-        >
-          <Text style={{ ...type.rowTitle, color: value === o.key ? color.ink : color.faint }}>
-            {o.label}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-/** A calendar-shaped day picker beats a wheel for "salary on the 25th". */
-function DayGrid({ value, onChange }: { value: number; onChange: (d: number) => void }) {
-  const { color, type } = useTheme();
-
-  return (
-    <View style={{ paddingHorizontal: space.lg, gap: space.xs }}>
-      <Text style={{ ...type.eyebrow, color: color.faint }}>Day of month</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => {
-          const active = d === value;
-          return (
-            <Pressable
-              key={d}
-              accessibilityLabel={`Day ${d}`}
-              onPress={() => { Haptics.selectionAsync(); onChange(d); }}
-              style={{
-                width: 40, height: 34, borderRadius: radius.chip, ...CONTINUOUS,
-                alignItems: "center", justifyContent: "center",
-                backgroundColor: active ? color.surfaceStrong : color.canvas,
-              }}
-            >
-              <Text style={{ ...type.rowTitle, color: active ? color.onStrong : color.ink }}>{d}</Text>
-            </Pressable>
-          );
-        })}
+    <View style={{ minHeight: 64, paddingLeft: space.base, flexDirection: "row", alignItems: "center", gap: space.sm }}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ ...type.body, color: color.ink }}>{label}</Text>
+        {detail && <Text style={{ ...type.rowSub, color: color.faint }}>{detail}</Text>}
       </View>
-      {value > 28 && (
-        <Text style={{ ...type.rowSub, color: color.faint }}>
-          For shorter months, this runs on the last day.
-        </Text>
-      )}
+      <Host
+        matchContents={{ vertical: true }}
+        colorScheme={scheme}
+        seedColor={color.accent}
+        ignoreSafeArea="all"
+        style={{ width: 160, minHeight: 48 }}
+      >
+        <NativePicker selectedValue={value} onValueChange={onChange} appearance="menu" testID={testID}>
+          {options.map((option) => (
+            <NativePicker.Item key={String(option.key)} label={option.label} value={option.key} />
+          ))}
+        </NativePicker>
+      </Host>
     </View>
   );
 }

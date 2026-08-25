@@ -1,6 +1,6 @@
 import { Q } from "@nozbe/watermelondb";
 import {
-  occurrencesBetween, nextOccurrence, utcDay, snapshotRate,
+  occurrencesBetween, nextOccurrence, calendarDay, utcDay, snapshotRate,
   type Currency, type RateTable, type Recurrence,
 } from "@budget/shared";
 import { database } from "@/db";
@@ -33,7 +33,7 @@ export async function runRecurring(
   rates: RateTable,
   now: number = Date.now()
 ): Promise<PendingConfirmation[]> {
-  const today = utcDay(now);
+  const today = calendarDay(now);
 
   const rules = await database
     .get<RecurringRule>("recurring_rules")
@@ -45,6 +45,8 @@ export async function runRecurring(
 
   for (const rule of rules) {
     const from = rule.lastRunAt ? utcDay(rule.lastRunAt.getTime()) : utcDay(rule.startOn.getTime()) - 1;
+    // lastRunAt is the handled-occurrence cursor. A missing transaction is not
+    // enough to recover an older date because the user may have deleted it.
     const due = occurrencesBetween(toRecurrence(rule), from, today);
 
     for (const at of due) {
@@ -56,9 +58,17 @@ export async function runRecurring(
 
   if (toCreate.length > 0) {
     await database.write(async () => {
+      // SpaceProvider and the Recurring screen can both catch up on mount.
+      // Recheck inside the serialized writer so they cannot create duplicates.
+      const missing: typeof toCreate = [];
+      for (const entry of toCreate) {
+        if (!(await alreadyPosted(entry.rule.id, entry.at))) missing.push(entry);
+      }
+      if (missing.length === 0) return;
+
       const txns = database.get<Transaction>("transactions");
       await database.batch(
-        ...toCreate.map(({ rule, at }) => {
+        ...missing.map(({ rule, at }) => {
           const { rateToBase, baseMinorOf } = snapshotRate(rule.currency, baseCurrency, rates);
           return txns.prepareCreate((t) => {
             t.spaceId = rule.spaceId;
@@ -113,17 +123,18 @@ async function stampRuns(entries: { rule: RecurringRule; at: number }[]): Promis
   });
 }
 
-/** Confirming a pending item posts it for real; declining just skips that date. */
+/** Confirming a pending item posts it and advances that rule. */
 export async function confirmPending(
   p: PendingConfirmation,
   baseCurrency: Currency,
-  rates: RateTable,
-  landed: boolean
+  rates: RateTable
 ): Promise<void> {
   const { rule, occurredAt } = p;
 
   await database.write(async () => {
-    if (landed) {
+    // A stale screen or a second local caller may confirm the same occurrence.
+    // The writer is serialized, so this check and create are atomic locally.
+    if (!(await alreadyPosted(rule.id, occurredAt))) {
       const { rateToBase, baseMinorOf } = snapshotRate(rule.currency, baseCurrency, rates);
       await database.get<Transaction>("transactions").create((t) => {
         t.spaceId = rule.spaceId;
@@ -140,14 +151,15 @@ export async function confirmPending(
       });
     }
 
-    // Either way this date is handled — a declined salary must not re-prompt
-    // every launch, it just did not arrive on that date.
-    await rule.update((r) => {
-      r.lastRunAt = new Date(occurredAt);
-      const next = nextOccurrence(toRecurrence(rule), occurredAt);
-      if (next !== null) r.nextRunAt = new Date(next);
-      else r.active = false;
-    });
+    const lastHandled = rule.lastRunAt ? utcDay(rule.lastRunAt.getTime()) : null;
+    if (lastHandled === null || occurredAt > lastHandled) {
+      await rule.update((r) => {
+        r.lastRunAt = new Date(occurredAt);
+        const next = nextOccurrence(toRecurrence(rule), occurredAt);
+        if (next !== null) r.nextRunAt = new Date(next);
+        else r.active = false;
+      });
+    }
   });
 }
 

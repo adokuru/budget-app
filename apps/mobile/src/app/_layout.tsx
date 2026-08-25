@@ -82,7 +82,7 @@ function Gate() {
   const sheet = {
     presentation: "formSheet",
     sheetGrabberVisible: true,
-    sheetCornerRadius: 28,
+    sheetCornerRadius: 18,
     contentStyle: { backgroundColor: color.canvas },
   } as const;
 
@@ -169,10 +169,26 @@ function Gate() {
             Sheets are routes, not components: native presentation, native
             detents, native dismiss gesture. No sheet library in the app.
           */}
-          <Stack.Screen name="add-expense" options={{ ...sheet, sheetAllowedDetents: [0.66, 0.95], sheetInitialDetentIndex: "last" }} />
-          <Stack.Screen name="converter" options={{ ...sheet, sheetAllowedDetents: [0.58] }} />
+          <Stack.Screen name="add-expense" options={{ ...sheet, sheetAllowedDetents: [0.95] }} />
+          <Stack.Screen
+            name="converter"
+            options={{
+              ...sheet,
+              sheetAllowedDetents: [0.9, 0.95],
+              sheetInitialDetentIndex: "last",
+            }}
+          />
           <Stack.Screen name="budget-editor" options={{ ...sheet, sheetAllowedDetents: [0.62] }} />
-          <Stack.Screen name="recurring-rule" options={{ ...sheet, sheetAllowedDetents: [0.8, 0.95] }} />
+          <Stack.Screen
+            name="recurring-rule"
+            options={{
+              ...sheet,
+              sheetAllowedDetents: [0.95],
+              headerShown: true,
+              headerShadowVisible: false,
+              headerTitleAlign: "center",
+            }}
+          />
           <Stack.Screen name="spaces" options={{ ...sheet, sheetAllowedDetents: [0.6] }} />
           <Stack.Screen name="members" options={{ ...sheet, sheetAllowedDetents: [0.7] }} />
           <Stack.Screen name="goal-editor" options={{ ...sheet, sheetAllowedDetents: [0.9, 0.95], sheetInitialDetentIndex: "last" }} />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Platform, ScrollView, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -40,6 +40,7 @@ export default function AddEntrySheet() {
   const [showAndroidDate, setShowAndroidDate] = useState(false);
   const [page, setPage] = useState<"main" | "category">("main");
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   const categories = useQuery<Category>(
     () =>
@@ -82,7 +83,8 @@ export default function AddEntrySheet() {
       show("Choose today or an earlier date", { tone: "error" });
       return;
     }
-    if (!canSave) return;
+    if (!canSave || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
 
     try {
@@ -122,6 +124,7 @@ export default function AddEntrySheet() {
       router.back();
     } catch (error) {
       show(error instanceof Error ? error.message : "Could not save this entry", { tone: "error" });
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -153,24 +156,33 @@ export default function AddEntrySheet() {
   if (page === "category") {
     return (
       <View style={{ flex: 1, backgroundColor: color.canvas }}>
-        <View
-          style={{
-            flexDirection: "row", alignItems: "center", gap: space.md,
-            paddingHorizontal: GUTTER, paddingTop: space.base, paddingBottom: space.md,
-            borderBottomWidth: 1, borderBottomColor: color.hairline,
-          }}
+        <ScrollView
+          contentInsetAdjustmentBehavior="never"
+          contentContainerStyle={{ paddingBottom: space.xxl }}
         >
-          <Pressable onPress={() => setPage("main")} hitSlop={12}>
-            <Image source="sf:chevron.left" tintColor={color.ink} style={{ width: 16, height: 16 }} />
-          </Pressable>
-          <Text style={{ ...type.screenTitle, color: color.ink }}>Category</Text>
-        </View>
+          <View
+            style={{
+              flexDirection: "row", alignItems: "center", gap: space.md,
+              paddingHorizontal: GUTTER, paddingTop: space.base, paddingBottom: space.md,
+              backgroundColor: color.canvas,
+              borderBottomWidth: 1, borderBottomColor: color.hairline,
+            }}
+          >
+            <Pressable
+              accessibilityLabel="Back to entry"
+              onPress={() => setPage("main")}
+              style={{ width: 48, height: 48, alignItems: "center", justifyContent: "center" }}
+            >
+              <Image source="sf:chevron.left" tintColor={color.ink} style={{ width: 16, height: 16 }} />
+            </Pressable>
+            <Text style={{ ...type.screenTitle, color: color.ink }}>Category</Text>
+          </View>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: space.xxl }}>
           {categories.map((c, i) => (
             <View key={c.id}>
               <Pressable
                 accessibilityLabel={`Select ${c.name} category`}
+                accessibilityState={{ selected: categoryId === c.id }}
                 onPress={() => {
                   Haptics.selectionAsync();
                   setCategoryId(c.id);
@@ -178,7 +190,7 @@ export default function AddEntrySheet() {
                 }}
                 style={({ pressed }) => ({
                   flexDirection: "row", alignItems: "center", gap: space.md,
-                  paddingHorizontal: GUTTER, paddingVertical: space.base,
+                  minHeight: 56, paddingHorizontal: GUTTER, paddingVertical: space.base,
                   backgroundColor: pressed ? color.pressed : "transparent",
                 })}
               >
@@ -204,7 +216,13 @@ export default function AddEntrySheet() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.canvas }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: color.canvas }}
+      contentContainerStyle={{ paddingBottom: space.xxl }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      automaticallyAdjustKeyboardInsets
+    >
       {/* Header */}
       <View
         style={{
@@ -213,7 +231,11 @@ export default function AddEntrySheet() {
         }}
       >
         <Text style={{ ...type.screenTitle, color: color.ink }}>{entry ? "Edit entry" : "New entry"}</Text>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable
+          accessibilityLabel="Close entry sheet"
+          onPress={() => router.back()}
+          style={{ width: 48, height: 48, alignItems: "center", justifyContent: "center" }}
+        >
           <Image source="sf:xmark" tintColor={color.faint} style={{ width: 15, height: 15 }} />
         </Pressable>
       </View>
@@ -233,13 +255,15 @@ export default function AddEntrySheet() {
               <Pressable
                 key={t}
                 accessibilityLabel={`Set entry type to ${t}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
                 onPress={() => {
                   Haptics.selectionAsync();
                   setKind(t);
                   setCategoryId(null);
                 }}
                 style={{
-                  flex: 1, paddingVertical: 8, alignItems: "center",
+                  flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center",
                   borderRadius: 8, ...CONTINUOUS,
                   backgroundColor: active ? (t === "expense" ? color.surfaceStrong : color.positive) : "transparent",
                 }}
@@ -276,7 +300,7 @@ export default function AddEntrySheet() {
           onPress={() => setPage("category")}
           style={{
             flexDirection: "row", alignItems: "center", gap: space.sm,
-            paddingHorizontal: space.md, paddingVertical: 11,
+            minHeight: 48, paddingHorizontal: space.md, paddingVertical: 11,
             borderWidth: 1, borderColor: color.hairline,
             borderRadius: radius.chip, ...CONTINUOUS,
           }}
@@ -302,7 +326,7 @@ export default function AddEntrySheet() {
           accessibilityLabel="Note"
           placeholderTextColor={color.fainter}
           style={{
-            fontSize: 13, color: color.ink,
+            minHeight: 48, fontSize: 13, color: color.ink,
             paddingHorizontal: space.md, paddingVertical: 11,
             borderWidth: 1, borderColor: color.hairline,
             borderRadius: radius.chip, ...CONTINUOUS,
@@ -317,7 +341,7 @@ export default function AddEntrySheet() {
 
         <View
           style={{
-            minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+            minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between",
             paddingHorizontal: space.md, borderWidth: 1, borderColor: color.hairline,
             borderRadius: radius.chip, ...CONTINUOUS,
           }}
@@ -333,7 +357,11 @@ export default function AddEntrySheet() {
               onValueChange={(_, value) => setOccurredAt(value)}
             />
           ) : (
-            <Pressable accessibilityLabel="Entry date" onPress={() => setShowAndroidDate(true)}>
+            <Pressable
+              accessibilityLabel="Entry date"
+              onPress={() => setShowAndroidDate(true)}
+              style={{ minHeight: 48, justifyContent: "center" }}
+            >
               <Text style={type.action}>{occurredAt.toLocaleDateString()}</Text>
             </Pressable>
           )}
@@ -355,14 +383,14 @@ export default function AddEntrySheet() {
       </View>
 
       {/* Save */}
-      <View style={{ paddingHorizontal: GUTTER, paddingBottom: space.xxl }}>
+      <View style={{ paddingHorizontal: GUTTER }}>
         <Pressable
           accessibilityLabel={entry ? "Save entry changes" : "Save entry"}
           onPress={save}
           disabled={!canSave}
           style={{
-            paddingVertical: 15, borderRadius: radius.card, ...CONTINUOUS,
-            alignItems: "center",
+            minHeight: 48, borderRadius: radius.card, ...CONTINUOUS,
+            alignItems: "center", justifyContent: "center",
             backgroundColor: !canSave ? color.hairline : isExpense ? color.surfaceStrong : color.accent,
           }}
         >
@@ -379,12 +407,12 @@ export default function AddEntrySheet() {
           <Pressable
             accessibilityLabel="Delete entry"
             onPress={confirmDelete}
-            style={{ paddingVertical: 14, alignItems: "center" }}
+            style={{ minHeight: 48, alignItems: "center", justifyContent: "center" }}
           >
             <Text style={{ ...type.action, color: color.danger }}>Delete entry</Text>
           </Pressable>
         )}
       </View>
-    </View>
+    </ScrollView>
   );
 }

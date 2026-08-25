@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  toMinor, toMajor, formatParts, formatMoney, sumMinor, percentOf,
+  toMinor, toMajor, formatParts, formatMoney, sumMinor, percentOf, availableThisMonth,
   assertMinor, isCurrency, CURRENCY_CODES,
 } from "../src/money.ts";
 
@@ -73,6 +73,11 @@ test("percentOf clamps and returns null when there is no limit", () => {
   assert.equal(percentOf(15_000, 10_000), 150);   // over budget must not clamp high
   assert.equal(percentOf(-100, 10_000), 0);
   assert.equal(percentOf(100, 0), null);
+});
+
+test("only received income counts as available cash", () => {
+  assert.equal(availableThisMonth(500_000, 125_000), 375_000);
+  assert.equal(availableThisMonth(0, 125_000), -125_000);
 });
 
 test("currency guard", () => {

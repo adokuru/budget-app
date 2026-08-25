@@ -99,9 +99,12 @@ export default function MembersSheet() {
       style={{ flex: 1, backgroundColor: color.canvas }}
       contentContainerStyle={{ padding: sp.lg, gap: sp.base, paddingBottom: sp.xxl }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Text style={{ ...type.screenTitle, color: color.ink }}>{current.name}</Text>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: sp.md }}>
+        <Text numberOfLines={2} style={{ ...type.screenTitle, flex: 1, color: color.ink }}>{current.name}</Text>
+        <Pressable
+          onPress={() => router.back()}
+          style={{ minWidth: 48, minHeight: 48, alignItems: "flex-end", justifyContent: "center" }}
+        >
           <Text style={{ ...type.body, color: color.faint }}>Done</Text>
         </Pressable>
       </View>

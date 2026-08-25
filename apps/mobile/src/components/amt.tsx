@@ -50,10 +50,28 @@ export function Amt({
 
   return (
     <View
-      style={{ flexDirection: "row", alignItems: "flex-start" }}
+      style={{
+        flexDirection: "row",
+        alignItems: "flex-start",
+        maxWidth: "100%",
+        ...(size === "xl" ? { alignSelf: "stretch", justifyContent: "center" } : null),
+      }}
       accessibilityLabel={`${prefix}${formatMoney(Math.abs(minor), currency)}`}
     >
-      <Text style={[base, { fontSize: s.font, lineHeight: s.font * 1.04 }]}>
+      <Text
+        adjustsFontSizeToFit
+        minimumFontScale={0.55}
+        numberOfLines={1}
+        style={[
+          base,
+          {
+            flexShrink: 1,
+            maxWidth: size === "xl" ? (hideFraction ? "100%" : "90%") : undefined,
+            fontSize: s.font,
+            lineHeight: s.font * 1.04,
+          },
+        ]}
+      >
         {prefix}
         {symbol}
         {integer}

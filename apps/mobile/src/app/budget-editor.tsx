@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
-import { applyKey, toMinor, type AmountKey } from "@budget/shared";
+import { applyKey, toMajor, toMinor, type AmountKey } from "@budget/shared";
 import { database } from "@/db";
 import type { Budget, Category } from "@/db/models";
 import { useQuery } from "@/db/hooks";
@@ -19,12 +19,18 @@ import { monthStart } from "@/lib/period";
 import { space } from "@/theme/tokens";
 
 export default function BudgetEditorSheet() {
+  const { categoryId: categoryParam } = useLocalSearchParams<{
+    categoryId?: string | string[];
+  }>();
+  const initialCategoryId = Array.isArray(categoryParam) ? categoryParam[0] : categoryParam;
   const { color, type } = useTheme();
   const { spaceId, displayCurrency, canEdit } = useSpace();
   const { show } = useToast();
   const periodStart = useMemo(() => monthStart().getTime(), []);
-  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(initialCategoryId ?? null);
   const [raw, setRaw] = useState("0");
+  const [hydrating, setHydrating] = useState(Boolean(initialCategoryId));
 
   const categories = useQuery<Category>(
     () =>
@@ -37,12 +43,42 @@ export default function BudgetEditorSheet() {
     [spaceId]
   );
 
-  const minor = toMinor(raw || "0", displayCurrency);
-  const canSave = canEdit && minor > 0 && categoryId !== null;
+  const currency = budget?.currency ?? displayCurrency;
+  const minor = toMinor(raw || "0", currency);
+  const selectedCategory = categories.find((category) => category.id === categoryId);
+  const canSave = canEdit && !hydrating && minor > 0 && selectedCategory !== undefined;
 
   useEffect(() => {
     if (!canEdit) router.back();
   }, [canEdit]);
+
+  useEffect(() => {
+    if (!categoryId) return;
+    let cancelled = false;
+    database.get<Budget>("budgets").query(
+      Q.where("space_id", spaceId),
+      Q.where("category_id", categoryId),
+      Q.where("period_start", periodStart)
+    ).fetch().then(([found]) => {
+      if (cancelled) return;
+      setBudget(found ?? null);
+      if (found) {
+        setRaw(String(toMajor(found.amountMinor, found.currency)));
+      } else {
+        setRaw("0");
+      }
+      setHydrating(false);
+    }).catch(() => {
+      if (!cancelled) setHydrating(false);
+    });
+    return () => { cancelled = true; };
+  }, [categoryId, periodStart, spaceId]);
+
+  function selectCategory(nextCategoryId: string) {
+    if (nextCategoryId === categoryId) return;
+    setHydrating(true);
+    setCategoryId(nextCategoryId);
+  }
 
   async function save() {
     if (!canSave) return;
@@ -61,7 +97,7 @@ export default function BudgetEditorSheet() {
       if (existing[0]) {
         await existing[0].update((b) => {
           b.amountMinor = minor;
-          b.currency = displayCurrency;
+          b.currency = currency;
         });
       } else {
         await database.get<Budget>("budgets").create((b) => {
@@ -69,7 +105,7 @@ export default function BudgetEditorSheet() {
           b.categoryId = categoryId!;
           b.periodStart = new Date(periodStart);
           b.amountMinor = minor;
-          b.currency = displayCurrency;
+          b.currency = currency;
         });
       }
     });
@@ -81,7 +117,7 @@ export default function BudgetEditorSheet() {
     router.back();
   }
 
-  if (!canEdit) return null;
+  if (!canEdit || hydrating) return null;
 
   return (
     <ScrollView
@@ -109,7 +145,7 @@ export default function BudgetEditorSheet() {
       <View style={{ alignItems: "center", paddingVertical: space.base }}>
         <Amt
           minor={minor}
-          currency={displayCurrency}
+          currency={currency}
           size="xl"
           tone={minor === 0 ? color.hairline : color.ink}
           hideFraction={!raw.includes(".")}
@@ -119,7 +155,7 @@ export default function BudgetEditorSheet() {
       <CategoryPicker
         categories={categories}
         selectedId={categoryId}
-        onSelect={setCategoryId}
+        onSelect={selectCategory}
       />
 
       <View style={{ flex: 1 }} />

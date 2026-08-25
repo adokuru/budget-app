@@ -20,7 +20,7 @@ export function CategoryPicker({
   return (
     <ScrollView
       horizontal
-      style={{ height: 34, flexGrow: 0 }}
+      style={{ height: 48, flexGrow: 0 }}
       contentInsetAdjustmentBehavior="never"
       showsHorizontalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
@@ -40,7 +40,7 @@ export function CategoryPicker({
             }}
             style={{
               flexDirection: "row", alignItems: "center", gap: 6,
-              height: 34, paddingHorizontal: space.md,
+              minHeight: 48, paddingHorizontal: space.md,
               borderRadius: radius.pill,
               backgroundColor: active ? color.ink : color.chip,
             }}

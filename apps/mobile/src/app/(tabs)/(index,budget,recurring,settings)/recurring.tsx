@@ -6,10 +6,10 @@ import * as Haptics from "expo-haptics";
 import { PressableScale as Pressable } from "@/components/pressable-scale";
 import { Q } from "@nozbe/watermelondb";
 import {
-  sumMinor, convertMinor, describeRecurrence, formatWhole, FALLBACK_EMOJI,
+  sumMinor, convertMinor, describeRecurrence, formatWhole, utcDay, FALLBACK_EMOJI,
 } from "@budget/shared";
 import { database } from "@/db";
-import type { Category, RecurringRule } from "@/db/models";
+import type { Category, RecurringRule, Transaction } from "@/db/models";
 import { useQueryState } from "@/db/hooks";
 import { useSpace } from "@/state/space";
 import { Amt } from "@/components/amt";
@@ -20,6 +20,7 @@ import { useToast } from "@/components/toast";
 import { useTheme } from "@/hooks/use-theme";
 import { runRecurring, confirmPending, type PendingConfirmation } from "@/lib/recurring-engine";
 import { formatRelativeDay } from "@/lib/period";
+import { syncQuietly } from "@/lib/sync";
 import { space, GUTTER, radius, CONTINUOUS } from "@/theme/tokens";
 
 export default function RecurringScreen() {
@@ -27,6 +28,7 @@ export default function RecurringScreen() {
   const { spaceId, baseCurrency, displayCurrency, rates, space: current, isShared, canEdit } = useSpace();
   const { show } = useToast();
   const [pending, setPending] = useState<PendingConfirmation[]>([]);
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   const ruleState = useQueryState<RecurringRule>(
     () => database.get<RecurringRule>("recurring_rules")
@@ -37,9 +39,18 @@ export default function RecurringScreen() {
     () => database.get<Category>("categories").query(Q.where("space_id", spaceId)),
     [spaceId]
   );
+  const receivedState = useQueryState<Transaction>(
+    () => database.get<Transaction>("transactions").query(
+      Q.where("space_id", spaceId),
+      Q.where("kind", "income"),
+      Q.where("recurring_rule_id", Q.notEq(null))
+    ),
+    [spaceId]
+  );
 
   const rules = ruleState.rows;
   const categories = categoryState.rows;
+  const received = receivedState.rows;
 
   const refresh = useCallback(async () => {
     setPending(await runRecurring(spaceId, baseCurrency, rates));
@@ -56,15 +67,28 @@ export default function RecurringScreen() {
 
   const catFor = (id: string) => categories.find((c) => c.id === id);
 
-  async function answer(p: PendingConfirmation, landed: boolean) {
-    Haptics.notificationAsync(
-      landed ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning
-    );
-    await confirmPending(p, baseCurrency, rates, landed);
-    await refresh();
-    show(landed ? "Marked as received" : "Still waiting for it", {
-      tone: landed ? "success" : "info",
-    });
+  async function confirm(p: PendingConfirmation) {
+    const key = `${p.rule.id}-${p.occurredAt}`;
+    if (confirming) return;
+    setConfirming(key);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try {
+      await confirmPending(p, baseCurrency, rates);
+      await refresh();
+      syncQuietly();
+      show(p.rule.kind === "income" ? "Added to this month’s income" : "Added to this month’s spending", {
+        tone: "success",
+      });
+    } catch (error) {
+      show(error instanceof Error ? error.message : "Could not add this recurring item", { tone: "error" });
+    } finally {
+      setConfirming(null);
+    }
+  }
+
+  function keepPending(p: PendingConfirmation) {
+    Haptics.selectionAsync();
+    show(`${p.rule.label} is still pending`, { tone: "info" });
   }
 
   const outgoings = rules.filter((r) => r.kind === "expense");
@@ -73,7 +97,7 @@ export default function RecurringScreen() {
   const activeIncomes = incomes.filter((rule) => rule.active);
   const commitment = sumMinor(activeOutgoings.map((r) => r.amountMinor));
 
-  if (ruleState.loading || categoryState.loading) {
+  if (ruleState.loading || categoryState.loading || receivedState.loading) {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ backgroundColor: color.canvas }}>
         <AppHeader spaceName={current.name} isShared={isShared} />
@@ -126,22 +150,29 @@ export default function RecurringScreen() {
 
                   <View style={{ flexDirection: "row", gap: space.sm, marginTop: space.md, paddingLeft: 40 }}>
                     <Pressable
-                      onPress={() => answer(p, true)}
+                      accessibilityLabel={p.rule.kind === "income" ? "Mark as received" : "Mark as paid"}
+                      onPress={() => void confirm(p)}
+                      disabled={confirming !== null}
                       style={{
-                        flex: 1, paddingVertical: 9, borderRadius: radius.chip, ...CONTINUOUS,
-                        alignItems: "center", backgroundColor: color.positive,
+                        flex: 1, minHeight: 48, borderRadius: radius.chip, ...CONTINUOUS,
+                        alignItems: "center", justifyContent: "center", backgroundColor: color.positive,
                       }}
                     >
-                      <Text style={{ ...type.body, fontWeight: "700", color: color.onPositive }}>Received</Text>
+                      <Text style={{ ...type.body, fontWeight: "700", color: color.onPositive }}>
+                        {confirming === `${p.rule.id}-${p.occurredAt}`
+                          ? "Adding…"
+                          : p.rule.kind === "income" ? "Received" : "Paid"}
+                      </Text>
                     </Pressable>
                     <Pressable
-                      onPress={() => answer(p, false)}
+                      accessibilityLabel="Keep this recurring item pending"
+                      onPress={() => keepPending(p)}
                       style={{
-                        flex: 1, paddingVertical: 9, borderRadius: radius.chip, ...CONTINUOUS,
-                        alignItems: "center", borderWidth: 1, borderColor: color.hairline,
+                        flex: 1, minHeight: 48, borderRadius: radius.chip, ...CONTINUOUS,
+                        alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: color.hairline,
                       }}
                     >
-                      <Text style={{ ...type.body, fontWeight: "600", color: color.body }}>Not yet</Text>
+                      <Text style={{ ...type.body, fontWeight: "600", color: color.body }}>Still waiting</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -174,6 +205,10 @@ export default function RecurringScreen() {
                       emoji={catFor(r.categoryId)?.emoji}
                       minor={toDisplay(r.amountMinor, r.currency)}
                       currency={displayCurrency}
+                      received={Boolean(r.lastRunAt && received.some((txn) =>
+                        txn.recurringRuleId === r.id &&
+                        utcDay(txn.occurredAt.getTime()) === utcDay(r.lastRunAt!.getTime())
+                      ))}
                     />
                     {i < incomes.length - 1 && <Rule full />}
                   </View>
@@ -230,34 +265,36 @@ export default function RecurringScreen() {
 }
 
 function RuleRow({
-  rule, emoji, minor, currency,
+  rule, emoji, minor, currency, received = false,
 }: {
   rule: RecurringRule;
   emoji?: string;
   minor: number;
   currency: Parameters<typeof Amt>[0]["currency"];
+  received?: boolean;
 }) {
   const { color, type } = useTheme();
   const { canEdit } = useSpace();
   const isIncome = rule.kind === "income";
+  const status = !rule.active ? "Paused" : !rule.autoPost ? "Needs confirmation" : null;
   const content = (
     <Row>
       <EmojiPlain glyph={emoji || FALLBACK_EMOJI} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ ...type.rowTitle, color: color.ink }} numberOfLines={1}>{rule.label}</Text>
-        <Text style={type.rowSub} numberOfLines={1}>
+        <Text style={type.rowSub} numberOfLines={2}>
           {formatRelativeDay(rule.nextRunAt)} ·{" "}
           {describeRecurrence({
             freq: rule.freq, dayOfMonth: rule.dayOfMonth, weekday: rule.weekday,
             interval: rule.interval, startOn: rule.startOn.getTime(),
           })}
-          {!rule.active ? " · Paused" : rule.autoPost ? "" : " · asks first"}
         </Text>
+        {status && <Text style={{ ...type.rowSub, fontWeight: "700", color: color.faint }}>{status}</Text>}
       </View>
       <View style={{ alignItems: "flex-end" }}>
         <Amt minor={minor} currency={currency} size="sm" hideFraction signed={isIncome}
              tone={isIncome ? color.positive : color.ink} />
-        {isIncome && rule.lastRunAt && (
+        {isIncome && received && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
             <Image source="sf:checkmark" tintColor={color.positive} style={{ width: 8, height: 8 }} />
             <Text style={{ fontSize: 10, fontWeight: "700", color: color.positive }}>Received</Text>

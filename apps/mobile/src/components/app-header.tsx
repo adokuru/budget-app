@@ -40,10 +40,10 @@ export function AppHeader({
         paddingVertical: space.md,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Brand markSize={32} wordSize={17} />
 
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+        <View style={{ flex: 1, alignItems: "flex-end" }}>
           <Pressable
             onPress={() => {
               Haptics.selectionAsync();
@@ -53,6 +53,8 @@ export function AppHeader({
               flexDirection: "row",
               alignItems: "center",
               gap: space.xs,
+              maxWidth: "100%",
+              minHeight: 44,
               backgroundColor: color.surface,
               borderRadius: radius.card,
               borderWidth: 1,
@@ -62,7 +64,7 @@ export function AppHeader({
             }}
           >
             <Text style={{ fontSize: 12 }}>{isShared ? "👨‍👩‍👧" : "👤"}</Text>
-            <Text style={{ ...type.body, fontWeight: "600", color: color.ink }} numberOfLines={1}>
+            <Text style={{ ...type.body, flexShrink: 1, fontWeight: "600", color: color.ink }} numberOfLines={1}>
               {spaceName}
             </Text>
             <Image source="sf:chevron.down" tintColor={color.faint} style={{ width: 9, height: 9 }} />

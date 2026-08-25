@@ -70,7 +70,11 @@ export default function SpacesSheet() {
     >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <Text style={{ ...type.screenTitle, color: color.ink }}>Spaces</Text>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable
+          accessibilityLabel="Close spaces"
+          onPress={() => router.back()}
+          style={{ minWidth: 48, minHeight: 48, alignItems: "flex-end", justifyContent: "center" }}
+        >
           <Text style={{ ...type.body, color: color.faint }}>Done</Text>
         </Pressable>
       </View>
@@ -95,8 +99,8 @@ export default function SpacesSheet() {
               />
               <View style={{ flex: 1 }}>
                 <Text style={{ ...type.body, color: color.ink }}>{s.name}</Text>
-                <Text style={{ ...type.rowSub, color: color.faint, textTransform: "capitalize" }}>
-                  {s.baseCurrency} · {s.role}
+                <Text style={{ ...type.rowSub, color: color.faint }}>
+                  {s.baseCurrency} · {s.role.charAt(0).toUpperCase() + s.role.slice(1)}
                 </Text>
               </View>
             </Pressable>

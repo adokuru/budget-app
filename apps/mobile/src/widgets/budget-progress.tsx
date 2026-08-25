@@ -4,6 +4,8 @@ import {
   containerBackground,
   font,
   foregroundStyle,
+  lineLimit,
+  minimumScaleFactor,
   monospacedDigit,
   progressViewStyle,
   tint,
@@ -41,7 +43,7 @@ export const BudgetProgressWidget = createWidget<BudgetWidgetProps>(
         <Text modifiers={[font({ size: 11, weight: "bold" }), foregroundStyle(positive)]}>
           {props.month.toUpperCase()} BUDGET
         </Text>
-        <Text modifiers={[font({ size: compact ? 22 : 26, weight: "bold", design: "rounded" }), foregroundStyle(primary), monospacedDigit()]}>
+        <Text modifiers={[font({ size: compact ? 22 : 26, weight: "bold", design: "rounded" }), foregroundStyle(primary), monospacedDigit(), lineLimit(1), minimumScaleFactor(0.5)]}>
           {props.hasBudget ? props.remaining : "No budget set"}
         </Text>
         <Text modifiers={[font({ size: 11 }), foregroundStyle(faint)]}>
